@@ -1,0 +1,705 @@
+'use strict';
+
+/* ── State ── */
+let currentImage = null, finderMods = [], stream = null;
+let pendingUnlockMod = null, currentBike = null;
+
+/* ── DOM ── */
+const $ = id => document.getElementById(id);
+const show = id => $(id)?.classList.remove('hidden');
+const hide = id => $(id)?.classList.add('hidden');
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+/* ── On load: check Stripe return ── */
+window.addEventListener('load', () => {
+  const p = new URLSearchParams(location.search);
+  const sid = p.get('unlocked');
+  if (sid) { history.replaceState({}, '', '/'); verifyUnlock(sid); }
+  initTrendingCards();
+  loadUserFromStorage();
+});
+
+/* ── SEARCH ─────────────────────────────────────────────── */
+$('btn-search').addEventListener('click', doSearch);
+$('search-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+document.querySelectorAll('.trend-tag').forEach(btn =>
+  btn.addEventListener('click', () => { $('search-input').value = btn.dataset.q; doSearch(); }));
+$('btn-clear-search').addEventListener('click', clearSearch);
+
+async function doSearch() {
+  const q = $('search-input').value.trim();
+  const res = await fetch(`/api/mods/search?q=${encodeURIComponent(q)}`);
+  const mods = await res.json();
+  const grid = $('search-results-grid');
+  $('search-results-title').textContent = q ? `Results for "${q}" (${mods.length})` : `All Mods (${mods.length})`;
+  grid.innerHTML = mods.map(buildModCard).join('');
+  attachCardClicks(grid, mods);
+  show('search-results-section');
+  $('search-results-section').scrollIntoView({behavior:'smooth'});
+}
+
+function clearSearch() {
+  $('search-input').value = '';
+  hide('search-results-section');
+}
+
+/* ── TRENDING GRID ──────────────────────────────────────── */
+function initTrendingCards() {
+  const grid = $('trending-grid');
+  grid.querySelectorAll('.mod-card.preloaded').forEach(card => {
+    const mod = JSON.parse(card.dataset.mod);
+    card.addEventListener('click', () => openModModal(mod));
+    card.querySelectorAll('.mod-img').forEach(img => {
+      img.addEventListener('error', () => { img.style.display = 'none'; });
+    });
+  });
+}
+
+/* Category filter */
+document.querySelectorAll('#cat-chips .chip').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    document.querySelectorAll('#cat-chips .chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    const cat = btn.dataset.cat;
+    const q = cat === 'all' ? '' : cat;
+    const res = await fetch(`/api/mods/search?q=${encodeURIComponent(q)}`);
+    const mods = await res.json();
+    const grid = $('trending-grid');
+    grid.innerHTML = mods.slice(0,20).map(buildModCard).join('');
+    attachCardClicks(grid, mods.slice(0,20));
+  });
+});
+
+/* ── FINDER TABS ────────────────────────────────────────── */
+document.querySelectorAll('.finder-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.finder-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.finder-tab-content').forEach(c => hide(c.id));
+    show(`tab-${tab.dataset.tab}`);
+  });
+});
+
+/* ── PHOTO UPLOAD ────────────────────────────────────────── */
+$('btn-upload').addEventListener('click', () => $('file-input').click());
+$('btn-camera').addEventListener('click', openCamera);
+$('file-input').addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+$('btn-change').addEventListener('click', resetPhotoState);
+$('btn-analyze-photo').addEventListener('click', () => analyzeImage('image'));
+
+const dz = $('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f?.type.startsWith('image/')) loadFile(f);
+});
+
+function loadFile(file) {
+  const r = new FileReader();
+  r.onload = e => { currentImage = e.target.result; showPreview(currentImage); };
+  r.readAsDataURL(file);
+}
+
+function showPreview(src) {
+  hide('drop-inner'); show('preview-wrap');
+  $('preview-img').src = src;
+}
+
+function resetPhotoState() {
+  currentImage = null; $('file-input').value = '';
+  show('drop-inner'); hide('preview-wrap');
+}
+
+/* ── CAMERA ──────────────────────────────────────────────── */
+async function openCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    $('camera-video').srcObject = stream;
+    show('camera-modal');
+  } catch(e) { alert('Camera not available: ' + e.message); }
+}
+$('btn-close-camera').addEventListener('click', closeCamera);
+$('camera-backdrop').addEventListener('click', closeCamera);
+function closeCamera() {
+  if (stream) { stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  hide('camera-modal');
+}
+$('btn-capture').addEventListener('click', () => {
+  const v = $('camera-video'), c = $('camera-canvas');
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  currentImage = c.toDataURL('image/jpeg', .92);
+  showPreview(currentImage);
+  closeCamera();
+});
+
+/* ── TEXT ANALYZE ────────────────────────────────────────── */
+$('btn-analyze-text').addEventListener('click', () => analyzeImage('text'));
+$('bike-text-input').addEventListener('keydown', e => { if (e.key==='Enter') analyzeImage('text'); });
+
+/* ── ANALYZE ─────────────────────────────────────────────── */
+async function analyzeImage(mode) {
+  hide('finder-error');
+  if (mode === 'image' && !currentImage) return;
+  if (mode === 'text' && !$('bike-text-input').value.trim()) return;
+
+  hide('finder-section'); hide('finder-results');
+  show('finder-loading');
+  stepState('fs1','active'); stepState('fs2',''); stepState('fs3','');
+
+  const body = mode === 'text'
+    ? {mode:'text', bike_text: $('bike-text-input').value.trim()}
+    : {mode:'image', image_data: currentImage};
+
+  try {
+    const res = await fetch('/analyze', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    stepState('fs1','done'); stepState('fs2','active');
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error);
+    stepState('fs2','done'); stepState('fs3','active');
+    await delay(300);
+    stepState('fs3','done');
+    await delay(200);
+    hide('finder-loading');
+    renderFinderResults(data, mode);
+  } catch(err) {
+    hide('finder-loading');
+    $('finder-error-msg').textContent = err.message || 'Could not identify bike';
+    show('finder-section');
+    show('finder-error');
+  }
+}
+
+function stepState(id, state) {
+  const el=$(id), st=$(id+'s');
+  if (!el) return;
+  el.classList.remove('active','done');
+  if (state==='active'){el.classList.add('active');st.textContent='working…';}
+  else if(state==='done'){el.classList.add('done');st.textContent='✓';}
+  else {st.textContent='';}
+}
+
+/* ── RENDER FINDER RESULTS ───────────────────────────────── */
+function renderFinderResults(data, mode) {
+  const {ebike, mods} = data;
+  finderMods = mods || [];
+  currentBike = ebike;
+
+  // Show bike thumbnail if photo was used
+  const thumb = $('finder-img');
+  if (mode === 'image' && currentImage) {
+    thumb.src = currentImage; thumb.style.display = 'block';
+  } else {
+    thumb.style.display = 'none';
+  }
+
+  const name = [ebike.brand, ebike.model].filter(v=>v&&v!=='Unknown').join(' ') || 'Your Ebike';
+  $('finder-bike-name').textContent = name;
+  $('query-bike-name').textContent = name;
+
+  const meta = [$ebike_meta(ebike.type), $ebike_meta(ebike.year), $ebike_meta(ebike.motor_type)].filter(Boolean);
+  $('finder-meta').innerHTML = meta.map(t=>`<span class="meta-tag">${t}</span>`).join('');
+
+  // Spell correction notice
+  if (ebike.spell_corrected && ebike.spell_corrected !== $('bike-text-input').value) {
+    const sn = $('spell-note');
+    sn.textContent = `✓ Interpreted as: "${ebike.spell_corrected}"`;
+    sn.classList.remove('hidden');
+  }
+
+  // Reset query UI state
+  document.querySelectorAll('.query-chip').forEach(c => c.classList.remove('active'));
+  $('bike-mod-query').value = '';
+  show('bike-query-section');
+  hide('finder-mods-section');
+  hide('finder-mods-loading');
+
+  hide('finder-section');
+  show('finder-results');
+  $('finder-results').scrollIntoView({behavior:'smooth'});
+}
+
+/* ── BIKE MOD QUERY ─────────────────────────────────────── */
+document.querySelectorAll('.query-chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.query-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    searchModsForBike(btn.dataset.q);
+  });
+});
+
+$('btn-bike-mod-search').addEventListener('click', () => {
+  const q = $('bike-mod-query').value.trim();
+  if (q) searchModsForBike(q);
+});
+$('bike-mod-query').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { const q = $('bike-mod-query').value.trim(); if (q) searchModsForBike(q); }
+});
+
+$('btn-show-all-mods').addEventListener('click', () => {
+  renderFinderMods(finderMods);
+  $('finder-mods-title').textContent = 'All Recommended Mods';
+  hide('bike-query-section');
+  show('finder-mods-section');
+  $('finder-mods-section').scrollIntoView({behavior:'smooth'});
+});
+
+$('btn-back-to-query').addEventListener('click', () => {
+  hide('finder-mods-section');
+  show('bike-query-section');
+  $('bike-query-section').scrollIntoView({behavior:'smooth'});
+});
+
+async function searchModsForBike(query) {
+  hide('bike-query-section');
+  show('finder-mods-loading');
+  hide('finder-mods-section');
+  try {
+    const res = await fetch('/api/mods/for-bike', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        bike_brand: currentBike?.brand || '',
+        bike_model: currentBike?.model || '',
+        query
+      })
+    });
+    const mods = await res.json();
+    finderMods = mods;
+    renderFinderMods(mods);
+    const label = query.charAt(0).toUpperCase() + query.slice(1);
+    $('finder-mods-title').textContent = `Best ${label} for ${$('finder-bike-name').textContent}`;
+    hide('finder-mods-loading');
+    show('finder-mods-section');
+    $('finder-mods-section').scrollIntoView({behavior:'smooth'});
+  } catch(err) {
+    hide('finder-mods-loading');
+    show('bike-query-section');
+  }
+}
+
+function $ebike_meta(v) { return v && v !== 'Unknown' ? v : null; }
+
+function renderFinderMods(mods) {
+  const sort = $('finder-sort').value;
+  const sorted = [...mods];
+  if (sort === 'savings') sorted.sort((a,b)=>(b.savings||0)-(a.savings||0));
+  else if (sort === 'price-low') sorted.sort((a,b)=>(a.found_price||0)-(b.found_price||0));
+  const grid = $('finder-mods-grid');
+  grid.innerHTML = sorted.map(buildModCard).join('');
+  attachCardClicks(grid, sorted);
+}
+
+$('finder-sort').addEventListener('change', () => renderFinderMods(finderMods));
+$('btn-finder-reset').addEventListener('click', () => {
+  resetPhotoState();
+  $('bike-text-input').value = '';
+  $('spell-note').classList.add('hidden');
+  $('bike-mod-query').value = '';
+  document.querySelectorAll('.query-chip').forEach(c => c.classList.remove('active'));
+  hide('finder-results');
+  hide('finder-mods-section');
+  show('finder-section');
+  finderMods = [];
+  currentBike = null;
+});
+$('btn-finder-retry').addEventListener('click', () => { hide('finder-error'); show('finder-section'); });
+
+/* ── BUILD MOD CARD ──────────────────────────────────────── */
+function buildModCard(mod) {
+  const icon = mod.icon || '🔧';
+  const savings = mod.savings || (mod.retail_price && mod.found_price ? mod.retail_price - mod.found_price : 0);
+  const found = mod.found_price || 0;
+  const retail = mod.retail_price || 0;
+  const imgSrc = mod.image_url || `/api/product-image?q=${encodeURIComponent(mod.ebay_search||mod.title||'')}`;
+  return `<div class="mod-card" data-id="${esc(mod.id||mod.title||'')}">
+    <div class="mod-img-wrap">
+      <img class="mod-img" src="${imgSrc}" alt="${esc(mod.title)}" loading="lazy" onerror="this.style.display='none'"/>
+      <div class="mod-img-fallback">${icon}</div>
+    </div>
+    <div class="mod-card-body">
+      <div class="mod-cat-tag">${esc((mod.category||'mod').toUpperCase())}</div>
+      <div class="mod-title">${esc(mod.title||'')}</div>
+      <div class="mod-brand">${esc(mod.brand||'')}</div>
+      <div class="price-row">
+        ${retail ? `<span class="retail-price">$${retail}</span>` : ''}
+        <span class="found-price">${found ? `$${found}` : 'Varies'}</span>
+      </div>
+      ${savings > 0 ? `<div class="savings-pill">💰 Save $${savings}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function attachCardClicks(grid, mods) {
+  grid.querySelectorAll('.mod-card').forEach((card, i) => {
+    card.addEventListener('click', () => openModModal(mods[i]));
+  });
+}
+
+/* ── MOD MODAL ───────────────────────────────────────────── */
+
+// Returns label + class for a direct shop link based on the URL
+function shopLabel(url) {
+  if (!url) return null;
+  if (url.includes('amazon.com')) {
+    // /dp/ = direct product page; /s? = search page
+    const isDirect = url.includes('/dp/');
+    return {label: isDirect ? '🛒 Amazon (Direct)' : '🛒 Amazon', cls: 'amazon'};
+  }
+  if (url.includes('ebay.com')) {
+    const isDirect = url.includes('/itm/');
+    return {label: isDirect ? '🏷️ eBay (Direct)' : '🏷️ eBay', cls: 'ebay'};
+  }
+  // Brand/retailer direct site
+  return {label: '🛍️ Shop Direct', cls: 'amazon'};
+}
+
+function buildShopLinks(mod, aq, eq) {
+  const hasDirect = mod.ebay_direct || mod.amazon_direct;
+  const savings = mod.savings || (mod.retail_price && mod.found_price ? mod.retail_price - mod.found_price : 0);
+  const unlockPrice = mod.unlock_price || 1;
+  const amzInfo = shopLabel(mod.amazon_direct);
+  const ebayInfo = shopLabel(mod.ebay_direct);
+  return `
+    ${hasDirect && window.STRIPE_KEY ? `
+      <button class="shop-btn unlock-btn" onclick="handleUnlock(${JSON.stringify(JSON.stringify(mod))})">
+        🔒 Unlock Best Deal — $${unlockPrice.toFixed(2)} (Save $${savings})
+      </button>` : ''}
+    ${amzInfo
+      ? `<a class="shop-btn ${amzInfo.cls}" href="${mod.amazon_direct}" target="_blank" rel="noopener">${amzInfo.label}</a>`
+      : `<a class="shop-btn amazon" href="https://www.amazon.com/s?k=${aq}" target="_blank" rel="noopener">🛒 Amazon</a>`}
+    ${ebayInfo
+      ? `<a class="shop-btn ebay" href="${mod.ebay_direct}" target="_blank" rel="noopener">${ebayInfo.label}</a>`
+      : `<a class="shop-btn ebay" href="https://www.ebay.com/sch/i.html?_nkw=${eq}&LH_BIN=1&_sop=15" target="_blank" rel="noopener">🏷️ eBay</a>`}
+    <a class="shop-btn google" href="https://www.google.com/search?tbm=shop&q=${aq}" target="_blank" rel="noopener">🔍 Compare Prices</a>
+  `;
+}
+
+function openModModal(mod) {
+  const savings = mod.savings || (mod.retail_price && mod.found_price ? mod.retail_price - mod.found_price : 0);
+  const imgSrc = mod.image_url || `/api/product-image?q=${encodeURIComponent(mod.ebay_search||mod.title||'')}`;
+  const aq = encodeURIComponent(mod.amazon_search || mod.title || '');
+  const eq = encodeURIComponent(mod.ebay_search || mod.title || '');
+
+  $('mod-modal-title').textContent = `${mod.icon||'🔧'} ${mod.title||''}`;
+  $('mod-modal-body').innerHTML = `
+    <img class="mod-detail-img" src="${imgSrc}" alt="${esc(mod.title)}" onerror="this.style.display='none'"/>
+    <div class="detail-section">
+      <div class="detail-label">Why it's popular</div>
+      <p>${esc(mod.why_popular || mod.description || '')}</p>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Description</div>
+      <p style="color:var(--muted);font-size:.85rem">${esc(mod.description||'')}</p>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Pricing</div>
+      <div class="modal-savings-row">
+        ${mod.retail_price ? `<span style="color:var(--muted);text-decoration:line-through">$${mod.retail_price}</span>` : ''}
+        ${mod.found_price ? `<span style="font-size:1.3rem;font-weight:800;color:var(--accent)">$${mod.found_price}</span>` : ''}
+        ${savings > 0 ? `<span class="modal-savings-badge">You save $${savings}!</span>` : ''}
+      </div>
+    </div>
+    ${mod.compatibility_note||mod.compatibility ? `<div class="detail-section">
+      <div class="detail-label">Compatibility</div>
+      <p style="color:var(--yellow);font-size:.85rem">💡 ${esc(mod.compatibility_note||mod.compatibility||'')}</p>
+    </div>` : ''}
+    ${mod.difficulty ? `<div class="detail-section">
+      <div class="detail-label">Install Difficulty</div>
+      <p>${{'easy':'🟢 Easy','medium':'🟡 Medium','hard':'🔴 Hard'}[mod.difficulty]||mod.difficulty}</p>
+    </div>` : ''}
+    <div class="detail-section">
+      <div class="detail-label">Shop — Best Price</div>
+      <div class="shop-links">${buildShopLinks(mod, aq, eq)}</div>
+    </div>`;
+  show('mod-modal');
+}
+
+$('btn-close-mod').addEventListener('click', () => hide('mod-modal'));
+$('mod-modal-backdrop').addEventListener('click', () => hide('mod-modal'));
+
+/* ── CHEAP EBIKES SEARCH ─────────────────────────────────── */
+$('btn-ebike-search').addEventListener('click', searchEbikes);
+$('ebike-search-input').addEventListener('keydown', e => { if(e.key==='Enter') searchEbikes(); });
+$('btn-close-ebike').addEventListener('click', () => hide('ebike-modal'));
+$('ebike-modal-backdrop').addEventListener('click', () => hide('ebike-modal'));
+
+/* openDirect — called by eBay buttons; fetches a live direct itm/ URL at click
+   time so we never navigate to a stale pre-fetched listing that may have sold. */
+async function openDirect(event, btn, search, condition) {
+  event.preventDefault();
+  const orig = btn.innerHTML;
+  btn.innerHTML = '⏳ Finding best deal...';
+  btn.style.pointerEvents = 'none';
+  try {
+    const res = await fetch(`/goto/ebay/url?q=${encodeURIComponent(search)}&c=${condition}`);
+    const data = await res.json();
+    window.open(data.url, '_blank', 'noopener,noreferrer');
+  } catch {
+    window.open(btn.href, '_blank', 'noopener,noreferrer');
+  } finally {
+    btn.innerHTML = orig;
+    btn.style.pointerEvents = '';
+  }
+}
+
+async function filterUsed(btn, search, maxPrice) {
+  const card = btn.closest('.ebike-result-card');
+  card.querySelectorAll('.budget-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  const usedBtn = card.querySelector('.used-btn');
+  if (!usedBtn) return;
+
+  // Show loading state on the button
+  const orig = usedBtn.textContent;
+  usedBtn.textContent = '⏳ Finding...';
+  usedBtn.style.pointerEvents = 'none';
+
+  try {
+    const maxParam = maxPrice > 0 ? `&max=${maxPrice}` : '';
+    const res = await fetch(`/goto/ebay/url?q=${encodeURIComponent(search)}&c=3000${maxParam}`);
+    const data = await res.json();
+    usedBtn.href = data.url;
+  } catch {
+    // fallback: eBay search with price cap
+    const base = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(search)}&LH_BIN=1&_sop=15&LH_ItemCondition=3000`;
+    usedBtn.href = maxPrice > 0 ? `${base}&_udhi=${maxPrice}` : base;
+  } finally {
+    usedBtn.textContent = orig;
+    usedBtn.style.pointerEvents = '';
+  }
+}
+
+function buildEbikeCard(b) {
+  const isRare = b.used_price_min === 0;
+  const search = b.ebay_search || b.title;
+  const usedEbay = b.ebay_url || `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(search)}&LH_BIN=1&_sop=15&LH_ItemCondition=3000`;
+  const newEbay  = b.ebay_new_url || `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(search)}&LH_BIN=1&_sop=15&LH_ItemCondition=1000`;
+  const gShop    = b.google_shop_url || `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(b.title+' electric bike new')}`;
+
+  // ── New column: up to 3 guaranteed-working buttons ──
+  // product_url = specific model page (e.g. us.sur-ron.com/lightbee/x) or brand page
+  // official_url = brand-level page (only shown separately if different from product_url)
+  const productUrl  = b.product_url || b.official_url || '';
+  const officialUrl = b.official_url || '';
+  const showSeparateOfficial = officialUrl && productUrl && officialUrl !== productUrl;
+
+  const buyNewBtn = productUrl
+    ? `<a class="ebike-option-btn new-btn" href="${productUrl}" target="_blank" rel="noopener">🛒 Buy New (Direct)</a>`
+    : `<a class="ebike-option-btn new-btn" href="${gShop}" target="_blank" rel="noopener">🛒 Buy New</a>`;
+  const officialBtn = showSeparateOfficial
+    ? `<a class="ebike-option-btn official-btn" href="${officialUrl}" target="_blank" rel="noopener">🌐 Official Site</a>`
+    : '';
+  const cheapNewBtn = `<a class="ebike-option-btn cheap-btn" href="${newEbay}"
+    onclick="openDirect(event,this,'${search.replace(/'/g,"\\'")}',1000);return false"
+    target="_blank" rel="noopener">💸 Cheapest New on eBay</a>`;
+
+  // ── Used column ──
+  let usedSection;
+  if (isRare) {
+    usedSection = `
+      <div class="used-unavail">⚠️ No used listings<br>available right now</div>
+      ${productUrl ? `<a class="ebike-option-btn new-btn" href="${productUrl}" target="_blank" rel="noopener" style="margin-top:6px">🛒 Buy New Instead</a>` : buyNewBtn}`;
+  } else {
+    usedSection = `
+      <a class="ebike-option-btn used-btn" href="${usedEbay}"
+        onclick="openDirect(event,this,'${search.replace(/'/g,"\\'")}',3000);return false"
+        target="_blank" rel="noopener">🏷️ Find Cheapest Used</a>
+      <div class="budget-chips">
+        <span class="budget-label">Max $</span>
+        ${[1000,2000,3000,5000].filter(p => p >= b.used_price_min * 0.8).map(p =>
+          `<button class="budget-chip" onclick="filterUsed(this,'${search.replace(/'/g,"\\'")}',${p})">$${p>=1000?(p/1000)+'k':p}</button>`
+        ).join('')}
+        <button class="budget-chip active" onclick="filterUsed(this,'${search.replace(/'/g,"\\'")}',0)">Any</button>
+      </div>`;
+  }
+
+  return `
+  <div class="ebike-result-card">
+    <div class="ebike-result-header">
+      <div class="ebike-result-title">${esc(b.title)}</div>
+      ${b.description ? `<div class="ebike-result-desc">${esc(b.description)}</div>` : ''}
+    </div>
+    <div class="ebike-options-row">
+      <div class="ebike-option-col">
+        <div class="option-label">🆕 New</div>
+        <div class="option-price">${esc(b.new_price) || 'Check dealer'}</div>
+        ${officialBtn}
+        ${buyNewBtn}
+        ${cheapNewBtn}
+      </div>
+      <div class="ebike-option-divider"></div>
+      <div class="ebike-option-col">
+        <div class="option-label">🔄 Used</div>
+        <div class="option-price">${isRare ? '—' : esc(b.used_price_typical) || 'Check eBay'}</div>
+        ${usedSection}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function searchEbikes() {
+  const q = $('ebike-search-input').value.trim() || 'cheap ebike';
+  $('ebike-modal-title').textContent = `🚲 "${q}" — New vs Used`;
+  $('ebike-results').innerHTML = '';
+  show('ebike-loading');
+  show('ebike-modal');
+
+  try {
+    const res = await fetch(`/api/ebikes/search?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    const grid = $('ebike-results');
+    if (data.error || !data.length) {
+      grid.innerHTML = `<p style="color:var(--muted);padding:20px 0">No results found. Try different keywords.</p>`;
+    } else {
+      grid.innerHTML = data.map(buildEbikeCard).join('');
+    }
+    hide('ebike-loading');
+  } catch(e) {
+    hide('ebike-loading');
+    $('ebike-results').innerHTML = '<p style="color:var(--red)">Search failed. Try again.</p>';
+  }
+}
+
+/* ── AUTH / SIGN IN ──────────────────────────────────────── */
+let currentUser = null;
+
+function loadUserFromStorage() {
+  try { currentUser = JSON.parse(localStorage.getItem('emf_user') || 'null'); } catch {}
+  if (currentUser) $('btn-signin-header').textContent = `Hi, ${currentUser.name.split(' ')[0]}`;
+}
+
+$('btn-signin-header').addEventListener('click', () => {
+  $('auth-title').textContent = 'Sign In';
+  show('auth-modal');
+});
+$('btn-close-auth').addEventListener('click', () => hide('auth-modal'));
+$('auth-backdrop').addEventListener('click', () => hide('auth-modal'));
+
+$('terms-check').addEventListener('change', () => {
+  $('btn-auth-submit').disabled = !$('terms-check').checked ||
+    !$('auth-name').value.trim() || !$('auth-email').value.trim();
+});
+['auth-name','auth-email'].forEach(id => {
+  $(id).addEventListener('input', () => {
+    $('btn-auth-submit').disabled = !$('terms-check').checked ||
+      !$('auth-name').value.trim() || !$('auth-email').value.trim();
+  });
+});
+
+$('btn-auth-submit').addEventListener('click', () => {
+  currentUser = {name: $('auth-name').value.trim(), email: $('auth-email').value.trim()};
+  localStorage.setItem('emf_user', JSON.stringify(currentUser));
+  $('btn-signin-header').textContent = `Hi, ${currentUser.name.split(' ')[0]}`;
+  hide('auth-modal');
+  if (pendingUnlockMod) { const m = pendingUnlockMod; pendingUnlockMod = null; doUnlock(m); }
+});
+
+/* ── TERMS ───────────────────────────────────────────────── */
+$('btn-show-terms').addEventListener('click', e => { e.preventDefault(); show('terms-modal'); });
+$('btn-close-terms').addEventListener('click', () => hide('terms-modal'));
+$('terms-backdrop').addEventListener('click', () => hide('terms-modal'));
+$('btn-accept-terms').addEventListener('click', () => {
+  hide('terms-modal');
+  $('terms-check').checked = true;
+  $('terms-check').dispatchEvent(new Event('change'));
+});
+$('footer-terms').addEventListener('click', e => { e.preventDefault(); show('terms-modal'); });
+
+/* ── UNLOCK / STRIPE ─────────────────────────────────────── */
+function handleUnlock(modJson) {
+  const mod = JSON.parse(modJson);
+  if (!currentUser) {
+    pendingUnlockMod = mod;
+    $('auth-title').textContent = 'Sign In to Unlock Best Price';
+    show('auth-modal');
+    return;
+  }
+  doUnlock(mod);
+}
+
+async function doUnlock(mod) {
+  const directUrl = mod.ebay_direct || mod.amazon_direct || mod.amazon_search_link || '';
+  try {
+    const res = await fetch('/create-checkout', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mod_title:mod.title, price_cents:mod.unlock_cents||100, direct_url:directUrl, savings:mod.savings||0})
+    });
+    const data = await res.json();
+    if (data.checkout_url) location.href = data.checkout_url;
+    else showUnlockSuccess(mod.title, directUrl);
+  } catch { showUnlockSuccess(mod.title, directUrl); }
+}
+
+async function verifyUnlock(sid) {
+  try {
+    const res = await fetch('/verify-unlock', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({session_id:sid})});
+    const data = await res.json();
+    if (data.success) showUnlockSuccess(data.mod_title, data.direct_url);
+  } catch {}
+}
+
+function showUnlockSuccess(title, url) {
+  $('unlock-link').href = url; $('unlock-link').textContent = url || 'Open Link';
+  show('unlock-modal');
+}
+
+$('btn-close-unlock').addEventListener('click', () => hide('unlock-modal'));
+$('unlock-backdrop').addEventListener('click', () => hide('unlock-modal'));
+
+/* ── BROWSE ALL MODS ─────────────────────────────────────── */
+document.addEventListener('click', e => {
+  if (e.target.id === 'btn-browse-all') {
+    show('trending-section');
+    $('trending-section').scrollIntoView({behavior:'smooth'});
+  }
+});
+
+/* ── SCAM CHECKER ────────────────────────────────────────── */
+$('btn-scam-check').addEventListener('click', runScamCheck);
+$('scam-url-input').addEventListener('keydown', e => { if(e.key==='Enter') runScamCheck(); });
+
+async function runScamCheck() {
+  const url = $('scam-url-input').value.trim();
+  if (!url) return;
+  show('scam-loading'); hide('scam-result');
+  try {
+    const res = await fetch('/api/scam-check', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url})
+    });
+    const d = await res.json();
+    hide('scam-loading');
+    if (d.error) {
+      $('scam-result').innerHTML = `<p style="color:var(--red)">⚠️ ${esc(d.error)}</p>`;
+      show('scam-result'); return;
+    }
+    const pct = d.scam_percentage || 0;
+    const cls = pct >= 60 ? 'danger' : pct >= 30 ? 'warning' : 'safe';
+    const redHtml = (d.red_flags||[]).map(f=>`<div class="scam-detail-item"><span>🚨</span><span>${esc(f)}</span></div>`).join('');
+    const greenHtml = (d.green_flags||[]).map(f=>`<div class="scam-detail-item"><span>✅</span><span>${esc(f)}</span></div>`).join('');
+    $('scam-result').innerHTML = `
+      <div class="scam-result-box ${cls}">
+        <div class="scam-score-row">
+          <div class="scam-score-badge ${cls}">${pct}% Scam Risk</div>
+          <div>
+            <div class="scam-verdict">${esc(d.verdict_emoji||'')} ${esc(d.verdict||'')}</div>
+            <div style="font-size:.8rem;color:var(--muted)">${esc(d.domain||'')}</div>
+          </div>
+        </div>
+        <p style="font-size:.85rem;color:var(--text)">${esc(d.recommendation||'')}</p>
+        ${greenHtml ? `<div class="scam-detail-list">${greenHtml}</div>` : ''}
+        ${redHtml ? `<div class="scam-detail-list">${redHtml}</div>` : ''}
+      </div>`;
+    show('scam-result');
+  } catch(e) {
+    hide('scam-loading');
+    $('scam-result').innerHTML = `<p style="color:var(--red)">Failed to check. Try again.</p>`;
+    show('scam-result');
+  }
+}
+
+/* ── HELPERS ─────────────────────────────────────────────── */
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

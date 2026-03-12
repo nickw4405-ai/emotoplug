@@ -1,0 +1,9 @@
+
+# Next.js
+.next/
+node_modules/
+
+# Secrets & local cache
+.env
+.env.local
+.ebay_cache.json

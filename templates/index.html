@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>eMotoFetch — Top Quality Mods for Less</title>
+  <link rel="stylesheet" href="/static/style.css"/>
+  {% if stripe_key %}<script src="https://js.stripe.com/v3/"></script>
+  <script>window.STRIPE_KEY="{{stripe_key}}";</script>{% endif %}
+</head>
+<body>
+<div class="bg-glow"></div>
+
+<!-- ── HEADER ─────────────────────────────────────────── -->
+<header>
+  <div class="header-inner">
+    <div class="logo"><span class="logo-icon">⚡</span>eMoto<span class="accent">Fetch</span></div>
+    <button class="btn btn-outline btn-sm" id="btn-signin-header">Sign In</button>
+  </div>
+</header>
+
+<!-- ── HERO SEARCH ────────────────────────────────────── -->
+<section class="hero">
+  <h1>Find the Best Ebike Mods<br><span class="accent">Top Quality. Way Less.</span></h1>
+  <p class="hero-sub">100+ community-loved mods — titanium bolts, Magura brakes, Bafang motors & more, all at the best prices</p>
+  <div class="search-wrap">
+    <div class="search-bar" id="main-search-bar">
+      <span class="search-icon">🔍</span>
+      <input id="search-input" type="text" placeholder="Search top-rated mods at unbeatable prices…" autocomplete="off"/>
+      <button class="btn btn-primary" id="btn-search">Search</button>
+    </div>
+    <div class="trending-tags">
+      <span class="tag-label">🔥 Trending:</span>
+      {% for tag in ["Ultra Bee Brakes","Guts Seat Cover","Supermoto Tires","Baja Lights","Titanium Bolt Set","Colored Titanium Bolts","Battery Pack","Front License Plate"] %}
+      <button class="trend-tag" data-q="{{tag}}">{{tag}}</button>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ── MAIN ───────────────────────────────────────────── -->
+<main>
+
+  <!-- ── FIND MODS FOR YOUR BIKE ───────────────────── -->
+  <section class="card finder-card" id="finder-section">
+    <h2>🎯 Find the Best Mods for YOUR Bike</h2>
+    <p class="section-sub">Upload a photo or type your bike — AI finds the top community-loved upgrades at the best prices</p>
+    <div class="finder-tabs">
+      <button class="finder-tab active" data-tab="photo">📷 Upload Photo</button>
+      <button class="finder-tab" data-tab="text">⌨️ Type Bike Name</button>
+    </div>
+
+    <!-- Photo tab -->
+    <div id="tab-photo" class="finder-tab-content">
+      <div id="drop-zone" class="drop-zone">
+        <div id="drop-inner">
+          <div class="drop-icon">📸</div>
+          <p>Drop photo here or</p>
+          <div class="upload-btns">
+            <button class="btn btn-primary" id="btn-upload">📁 Upload Photo</button>
+            <button class="btn btn-secondary" id="btn-camera">📷 Camera</button>
+          </div>
+          <p class="hint">JPG · PNG · WEBP · Max 10MB</p>
+        </div>
+        <div id="preview-wrap" class="hidden">
+          <img id="preview-img" src="" alt="preview"/>
+          <div class="preview-btns">
+            <button class="btn btn-outline btn-sm" id="btn-change">Change</button>
+            <button class="btn btn-primary" id="btn-analyze-photo">🔍 Find My Mods</button>
+          </div>
+        </div>
+      </div>
+      <input type="file" id="file-input" accept="image/*" class="hidden"/>
+    </div>
+
+    <!-- Text tab -->
+    <div id="tab-text" class="finder-tab-content hidden">
+      <div class="text-finder">
+        <input id="bike-text-input" type="text" placeholder="e.g. Rad Power Bikes RadRover 6, Trek Rail 9, Aventon Pace 500…" autocomplete="off"/>
+        <p class="hint">Spell it however — we'll figure it out ✓</p>
+        <button class="btn btn-primary" id="btn-analyze-text">🔍 Find My Mods</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Finder loading -->
+  <section id="finder-loading" class="card hidden">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <h3 id="finder-loading-title">Identifying your bike…</h3>
+      <div class="loading-steps">
+        <div class="step" id="fs1"><span>🔎</span><span>Identifying brand &amp; model</span><span id="fs1s" class="step-status">…</span></div>
+        <div class="step" id="fs2"><span>🛠️</span><span>Finding specific mods</span><span id="fs2s" class="step-status"></span></div>
+        <div class="step" id="fs3"><span>💰</span><span>Calculating your savings</span><span id="fs3s" class="step-status"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Finder results -->
+  <section id="finder-results" class="hidden">
+    <div class="ebike-id-card card">
+      <img id="finder-img" src="" alt="" class="ebike-thumb"/>
+      <div class="ebike-id-info">
+        <div class="id-badge">✓ Identified</div>
+        <h2 id="finder-bike-name"></h2>
+        <div id="finder-meta" class="meta-tags"></div>
+        {% raw %}
+        <div id="spell-note" class="spell-note hidden"></div>
+        {% endraw %}
+      </div>
+    </div>
+
+    <!-- What are you looking for? -->
+    <div id="bike-query-section" class="card" style="margin-top:16px">
+      <h3 style="margin-bottom:6px">🎯 What are you looking for?</h3>
+      <p class="section-sub" style="margin:-2px 0 16px">Pick a category or search — we'll find the best mods for your <span id="query-bike-name" style="color:var(--accent);font-weight:700"></span></p>
+      <div class="query-chips">
+        <button class="query-chip" data-q="Ultra Bee Brakes">🛑 Ultra Bee Brakes</button>
+        <button class="query-chip" data-q="battery pack upgrade">⚡ Battery Pack</button>
+        <button class="query-chip" data-q="titanium bolt set">🔩 Titanium Bolt Set</button>
+        <button class="query-chip" data-q="colored titanium bolts">🌈 Colored Titanium Bolts</button>
+        <button class="query-chip" data-q="Guts Racing seat cover">🪑 Guts Seat Cover</button>
+        <button class="query-chip" data-q="front license plate bracket">🪪 Front Plate</button>
+        <button class="query-chip" data-q="supermoto tires">🏎️ Supermoto Tires</button>
+        <button class="query-chip" data-q="Baja Designs lights">💡 Baja Lights</button>
+        <button class="query-chip" data-q="handlebars">🏍️ Handlebars</button>
+        <button class="query-chip" data-q="suspension">🔗 Suspension</button>
+      </div>
+      <div class="search-bar" style="margin-top:14px">
+        <span class="search-icon">🔍</span>
+        <input id="bike-mod-query" type="text" placeholder="Or type what you're looking for…" autocomplete="off"/>
+        <button class="btn btn-primary" id="btn-bike-mod-search">Find</button>
+      </div>
+      <div style="text-align:center;margin-top:14px">
+        <button class="btn btn-outline btn-sm" id="btn-show-all-mods">Show All Recommended Mods</button>
+      </div>
+    </div>
+
+    <!-- Mods loading -->
+    <div id="finder-mods-loading" class="hidden" style="text-align:center;padding:32px">
+      <div class="spinner" style="margin:0 auto"></div>
+      <p style="margin-top:12px;color:var(--muted)">Finding the best mods for your bike…</p>
+    </div>
+
+    <!-- Mods grid (hidden until query) -->
+    <div id="finder-mods-section" class="hidden">
+      <div class="section-header" style="margin-top:24px">
+        <h2 id="finder-mods-title">Best Mods for Your Bike</h2>
+        <select id="finder-sort">
+          <option value="default">Recommended</option>
+          <option value="savings">Biggest Savings</option>
+          <option value="price-low">Price: Low → High</option>
+        </select>
+      </div>
+      <div class="mods-grid" id="finder-mods-grid"></div>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn btn-outline btn-sm" id="btn-back-to-query">← Search Again</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-outline" id="btn-finder-reset">↩ Scan Another Bike</button>
+      <button class="btn btn-secondary" id="btn-browse-all">🔥 Browse All Mods</button>
+    </div>
+  </section>
+
+  <!-- Finder error -->
+  <section id="finder-error" class="card hidden">
+    <div class="error-box">
+      <div style="font-size:2.5rem">⚠️</div>
+      <h3 id="finder-error-msg">Could not identify bike</h3>
+      <button class="btn btn-primary" id="btn-finder-retry">Try Again</button>
+    </div>
+  </section>
+
+  <!-- Search results (shown when searching) -->
+  <section id="search-results-section" class="hidden">
+    <div class="section-header">
+      <h2 id="search-results-title">Results</h2>
+      <button class="btn btn-outline btn-sm" id="btn-clear-search">✕ Clear</button>
+    </div>
+    <div class="mods-grid" id="search-results-grid"></div>
+  </section>
+
+  <!-- ── TRENDING MODS ──────────────────────────────── -->
+  <section id="trending-section" class="hidden">
+    <div class="section-header">
+      <h2>🔥 Top Mods Right Now</h2>
+      <div class="category-chips" id="cat-chips">
+        <button class="chip active" data-cat="all">All</button>
+        {% for cat in categories %}
+        <button class="chip" data-cat="{{cat}}">{{cat|capitalize}}</button>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="mods-grid" id="trending-grid">
+      {% for mod in trending %}
+      <div class="mod-card preloaded" data-mod='{{mod|tojson}}'>
+        <div class="mod-img-wrap">
+          <img class="mod-img" src="/api/product-image?q={{mod.ebay_search|urlencode}}" alt="{{mod.title}}" loading="lazy" onerror="this.style.display='none'"/>
+          <div class="mod-img-fallback">{{mod.get('icon','🔧')}}</div>
+        </div>
+        <div class="mod-card-body">
+          <div class="mod-cat-tag">{{mod.category|capitalize}}</div>
+          <div class="mod-title">{{mod.title}}</div>
+          <div class="mod-brand">{{mod.brand}}</div>
+          <div class="price-row">
+            {% if mod.retail_price %}<span class="retail-price">${{mod.retail_price}}</span>{% endif %}
+            <span class="found-price">${{mod.found_price}}</span>
+          </div>
+          {% if mod.retail_price and mod.found_price %}
+          <div class="savings-pill">💰 Save ${{mod.retail_price - mod.found_price}}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ── SCAM CHECKER ──────────────────────────────── -->
+  <section class="card" id="scam-checker-section">
+    <h2>🛡️ Scam Checker</h2>
+    <p class="section-sub">Paste any product link — we'll tell you if it's legit or a scam</p>
+    <div class="search-bar scam-search-bar">
+      <span class="search-icon">🔗</span>
+      <input id="scam-url-input" type="url" placeholder="Paste product link here… amazon.com, ebay.com, aliexpress.com, anywhere…" autocomplete="off"/>
+      <button class="btn btn-primary" id="btn-scam-check">Check It</button>
+    </div>
+    <div id="scam-loading" class="hidden" style="text-align:center;padding:24px">
+      <div class="spinner" style="margin:0 auto"></div>
+      <p style="margin-top:12px;color:var(--text-muted)">Analyzing link…</p>
+    </div>
+    <div id="scam-result" class="hidden"></div>
+  </section>
+
+  <!-- ── CHEAP EBIKES SHOP ──────────────────────────── -->
+  <section class="card" id="cheap-ebikes-section">
+    <h2>🚲 Shop Quality Ebikes for Less</h2>
+    <p class="section-sub">Find top-rated complete ebikes at great prices — sourced live from eBay</p>
+    <div class="search-bar ebike-search-bar">
+      <span class="search-icon">🚲</span>
+      <input id="ebike-search-input" type="text" placeholder="Search ebikes… fat tire, commuter, under $1000…" autocomplete="off"/>
+      <button class="btn btn-primary" id="btn-ebike-search">Find Deals</button>
+    </div>
+  </section>
+
+<!-- ── EBIKE RESULTS MODAL ────────────────────────── -->
+<div id="ebike-modal" class="modal hidden">
+  <div class="modal-backdrop" id="ebike-modal-backdrop"></div>
+  <div class="modal-box modal-wide">
+    <div class="modal-header">
+      <h3 id="ebike-modal-title">🚲 Deals Found</h3>
+      <button class="btn-close" id="btn-close-ebike">✕</button>
+    </div>
+    <div id="ebike-loading" class="hidden" style="text-align:center;padding:32px">
+      <div class="spinner" style="margin:0 auto"></div>
+      <p style="margin-top:12px;color:var(--muted)">Finding best bikes…</p>
+    </div>
+    <div id="ebike-results" class="ebike-grid"></div>
+  </div>
+</div>
+
+</main>
+
+<!-- ── CAMERA MODAL ───────────────────────────────────── -->
+<div id="camera-modal" class="modal hidden">
+  <div class="modal-backdrop" id="camera-backdrop"></div>
+  <div class="modal-box">
+    <div class="modal-header"><h3>Take a Photo</h3><button class="btn-close" id="btn-close-camera">✕</button></div>
+    <video id="camera-video" autoplay playsinline></video>
+    <canvas id="camera-canvas" class="hidden"></canvas>
+    <div class="modal-footer"><button class="btn btn-primary btn-large" id="btn-capture">📸 Capture</button></div>
+  </div>
+</div>
+
+<!-- ── MOD DETAIL MODAL ───────────────────────────────── -->
+<div id="mod-modal" class="modal hidden">
+  <div class="modal-backdrop" id="mod-modal-backdrop"></div>
+  <div class="modal-box modal-wide">
+    <div class="modal-header">
+      <h3 id="mod-modal-title"></h3>
+      <button class="btn-close" id="btn-close-mod">✕</button>
+    </div>
+    <div id="mod-modal-body"></div>
+  </div>
+</div>
+
+<!-- ── TERMS + AUTH MODAL ────────────────────────────── -->
+<div id="auth-modal" class="modal hidden">
+  <div class="modal-backdrop" id="auth-backdrop"></div>
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="auth-title">Sign In to Unlock Best Price</h3>
+      <button class="btn-close" id="btn-close-auth">✕</button>
+    </div>
+    <div class="auth-body">
+      <input id="auth-name" type="text" placeholder="Your name" autocomplete="name"/>
+      <input id="auth-email" type="email" placeholder="Your email" autocomplete="email"/>
+      <div class="terms-box">
+        <label class="terms-label">
+          <input type="checkbox" id="terms-check"/>
+          <span>I agree to the <a href="#" id="btn-show-terms">Terms of Service</a>. eMotoFetch is not responsible for purchases, pricing accuracy, or product quality. Links are provided for informational purposes only. All purchases are made directly with third-party retailers.</span>
+        </label>
+      </div>
+      <button class="btn btn-primary btn-large" id="btn-auth-submit" disabled>Continue to Unlock →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TERMS MODAL ────────────────────────────────────── -->
+<div id="terms-modal" class="modal hidden">
+  <div class="modal-backdrop" id="terms-backdrop"></div>
+  <div class="modal-box modal-wide">
+    <div class="modal-header"><h3>Terms of Service</h3><button class="btn-close" id="btn-close-terms">✕</button></div>
+    <div class="terms-text">
+      <h4>1. No Liability</h4>
+      <p>eMotoFetch provides links to third-party retailers for informational purposes only. We are not responsible for the quality, safety, legality, or pricing of any products. All purchases are made directly with third-party retailers.</p>
+      <h4>2. Price Accuracy</h4>
+      <p>Prices shown are estimates and may not reflect current pricing. Always verify the final price on the retailer's website before purchasing.</p>
+      <h4>3. No Affiliation</h4>
+      <p>eMotoFetch is not affiliated with, endorsed by, or partnered with any retailer, brand, or manufacturer mentioned on this site.</p>
+      <h4>4. Link Access</h4>
+      <p>When you unlock a link, you receive the URL to a third-party product page. Refunds are not available once a link is unlocked, as the link is delivered immediately.</p>
+      <h4>5. Use at Your Own Risk</h4>
+      <p>Modification of ebikes may affect safety, warranty, and legality. Always consult local regulations. eMotoFetch accepts no responsibility for any modifications made to your vehicle.</p>
+      <h4>6. Privacy</h4>
+      <p>We store only your name and email for account purposes. We do not sell your data.</p>
+      <button class="btn btn-primary" style="margin-top:16px" id="btn-accept-terms">I Understand & Accept</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── UNLOCK SUCCESS MODAL ───────────────────────────── -->
+<div id="unlock-modal" class="modal hidden">
+  <div class="modal-backdrop" id="unlock-backdrop"></div>
+  <div class="modal-box">
+    <div class="modal-header"><h3>🔓 Link Unlocked!</h3><button class="btn-close" id="btn-close-unlock">✕</button></div>
+    <div style="padding:16px 0;display:flex;flex-direction:column;gap:16px">
+      <p style="color:var(--text-muted)">Here's your direct link to the best price:</p>
+      <a id="unlock-link" href="#" target="_blank" rel="noopener" class="btn btn-primary btn-large" style="justify-content:center">Open Best Price Link →</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>⚡ eMotoFetch · Powered by Claude AI · Prices may vary · Not affiliated with any retailer · <a href="#" id="footer-terms">Terms of Service</a></p>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
