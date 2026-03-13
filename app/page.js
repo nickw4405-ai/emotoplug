@@ -12,6 +12,27 @@ export default function Page() {
     <>
       <div className="bg-glow"></div>
 
+      {/* ── SOLAR SYSTEM BACKGROUND ── */}
+      <div className="solar-system">
+        <div className="ss-sun"></div>
+        {/* Mercury */}
+        <div className="ss-orbit ss-o1"><div className="ss-planet ss-p1"></div></div>
+        {/* Venus */}
+        <div className="ss-orbit ss-o2"><div className="ss-planet ss-p2"></div></div>
+        {/* Earth + Moon */}
+        <div className="ss-orbit ss-o3">
+          <div className="ss-planet ss-p3">
+            <div className="ss-moon-orbit"><div className="ss-moon"></div></div>
+          </div>
+        </div>
+        {/* Mars */}
+        <div className="ss-orbit ss-o4"><div className="ss-planet ss-p4"></div></div>
+        {/* Jupiter */}
+        <div className="ss-orbit ss-o5"><div className="ss-planet ss-p5"></div></div>
+        {/* Saturn (with ring via ::after) */}
+        <div className="ss-orbit ss-o6"><div className="ss-planet ss-p6"></div></div>
+      </div>
+
       {/* ── HEADER ── */}
       <header>
         <div className="header-inner">
