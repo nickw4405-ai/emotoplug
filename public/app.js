@@ -474,6 +474,10 @@ async function filterUsed(btn, search, maxPrice) {
   }
 }
 
+function isDirectLink(url) {
+  return url && url.includes('/itm/');
+}
+
 function buildEbikeCard(b) {
   const isRare = b.used_price_min === 0;
   const search = b.ebay_search || b.title;
@@ -482,8 +486,6 @@ function buildEbikeCard(b) {
   const gShop    = b.google_shop_url || `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(b.title+' electric bike new')}`;
 
   // ── New column: up to 3 guaranteed-working buttons ──
-  // product_url = specific model page (e.g. us.sur-ron.com/lightbee/x) or brand page
-  // official_url = brand-level page (only shown separately if different from product_url)
   const productUrl  = b.product_url || b.official_url || '';
   const officialUrl = b.official_url || '';
   const showSeparateOfficial = officialUrl && productUrl && officialUrl !== productUrl;
@@ -494,9 +496,14 @@ function buildEbikeCard(b) {
   const officialBtn = showSeparateOfficial
     ? `<a class="ebike-option-btn official-btn" href="${officialUrl}" target="_blank" rel="noopener">🌐 Official Site</a>`
     : '';
-  const cheapNewBtn = `<a class="ebike-option-btn cheap-btn" href="${newEbay}"
-    onclick="openDirect(event,this,'${search.replace(/'/g,"\\'")}',1000);return false"
-    target="_blank" rel="noopener">💸 Cheapest New on eBay</a>`;
+
+  // If we already have a direct itm/ link, open it straight away (no live lookup needed)
+  const cheapNewBtn = isDirectLink(newEbay)
+    ? `<a class="ebike-option-btn cheap-btn" href="${newEbay}"
+        target="_blank" rel="noopener">💸 Cheapest New on eBay ↗</a>`
+    : `<a class="ebike-option-btn cheap-btn" href="${newEbay}"
+        onclick="openDirect(event,this,'${search.replace(/'/g,"\\'")}',1000);return false"
+        target="_blank" rel="noopener">💸 Cheapest New on eBay</a>`;
 
   // ── Used column ──
   let usedSection;
@@ -504,6 +511,18 @@ function buildEbikeCard(b) {
     usedSection = `
       <div class="used-unavail">⚠️ No used listings<br>available right now</div>
       ${productUrl ? `<a class="ebike-option-btn new-btn" href="${productUrl}" target="_blank" rel="noopener" style="margin-top:6px">🛒 Buy New Instead</a>` : buyNewBtn}`;
+  } else if (isDirectLink(usedEbay)) {
+    // We have a direct itm/ link — open it directly, no live-lookup spinner
+    usedSection = `
+      <a class="ebike-option-btn used-btn" href="${usedEbay}"
+        target="_blank" rel="noopener">🏷️ View Cheapest Used ↗</a>
+      <div class="budget-chips">
+        <span class="budget-label">Max $</span>
+        ${[1000,2000,3000,5000].filter(p => p >= b.used_price_min * 0.8).map(p =>
+          `<button class="budget-chip" onclick="filterUsed(this,'${search.replace(/'/g,"\\'")}',${p})">$${p>=1000?(p/1000)+'k':p}</button>`
+        ).join('')}
+        <button class="budget-chip active" onclick="filterUsed(this,'${search.replace(/'/g,"\\'")}',0)">Any</button>
+      </div>`;
   } else {
     usedSection = `
       <a class="ebike-option-btn used-btn" href="${usedEbay}"
