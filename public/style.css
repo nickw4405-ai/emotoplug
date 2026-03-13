@@ -71,7 +71,7 @@ a{color:var(--accent);text-decoration:none}
 
 /* ── Solar System Background ── */
 .solar-system{
-  position:fixed;right:-60px;bottom:-60px;
+  position:fixed;right:-60px;top:-60px;
   width:700px;height:700px;
   pointer-events:none;z-index:0;opacity:.35;
 }
