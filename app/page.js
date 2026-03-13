@@ -15,7 +15,7 @@ export default function Page() {
       {/* ── HEADER ── */}
       <header>
         <div className="header-inner">
-          <div className="logo"><span className="logo-icon">⚡</span>eMoto<span className="accent">Fetch</span></div>
+          <div className="logo"><span className="logo-text">emotoplug</span></div>
           <button className="btn btn-outline btn-sm" id="btn-signin-header">Sign In</button>
         </div>
       </header>
@@ -302,6 +302,17 @@ export default function Page() {
               </label>
             </div>
             <button className="btn btn-primary btn-large" id="btn-auth-submit" disabled>Continue to Unlock →</button>
+
+            {/* Owner sign-in section */}
+            <div className="owner-signin-divider">
+              <button className="owner-signin-toggle" id="btn-owner-toggle">🔐 Owner Sign In</button>
+            </div>
+            <div id="owner-signin-section" className="owner-signin-section hidden">
+              <input id="owner-username" type="text" placeholder="Username or email" autoComplete="username" />
+              <input id="owner-password" type="password" placeholder="Password" autoComplete="current-password" />
+              <p id="owner-error" className="owner-error hidden">Invalid credentials</p>
+              <button className="btn btn-primary btn-large" id="btn-owner-submit">Sign In as Owner →</button>
+            </div>
           </div>
         </div>
       </div>
@@ -342,7 +353,7 @@ export default function Page() {
       </div>
 
       <footer>
-        <p>⚡ eMotoFetch · Powered by Claude AI · Prices may vary · Not affiliated with any retailer · <a href="#" id="footer-terms">Terms of Service</a></p>
+        <p>⚡ emotoplug · Powered by Claude AI · Prices may vary · Not affiliated with any retailer · <a href="#" id="footer-terms">Terms of Service</a></p>
       </footer>
     </>
   );

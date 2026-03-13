@@ -72,8 +72,21 @@ a{color:var(--accent);text-decoration:none}
 /* ── Header ── */
 header{position:relative;z-index:10;border-bottom:1px solid var(--border);padding:0 24px}
 .header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px}
-.logo{font-size:1.4rem;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
-.logo-icon{font-size:1.6rem;filter:drop-shadow(0 0 8px var(--accent))}
+.logo{display:flex;align-items:center}
+.logo-text{
+  font-family:'Boogaloo',cursive;
+  font-size:2rem;
+  letter-spacing:2px;
+  background:linear-gradient(135deg,#00e5ff 0%,#7c3aed 50%,#00e5ff 100%);
+  background-size:200% auto;
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 12px rgba(0,229,255,0.6)) drop-shadow(0 0 24px rgba(124,58,237,0.4));
+  animation:logoShimmer 4s linear infinite;
+  text-transform:lowercase;
+}
+@keyframes logoShimmer{0%{background-position:0% center}100%{background-position:200% center}}
 .accent{color:var(--accent)}
 
 /* ── Hero ── */
@@ -299,3 +312,13 @@ footer a{color:var(--muted)}footer a:hover{color:var(--accent)}
   .upload-btns{flex-direction:column;width:100%}
   .finder-tabs{flex-direction:column}
 }
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* ── Owner Sign-In Section ── */
+.owner-signin-divider{text-align:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.owner-signin-toggle{background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color 0.2s}
+.owner-signin-toggle:hover{color:var(--text)}
+.owner-signin-section{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.owner-signin-section input{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:0.95rem;outline:none;width:100%}
+.owner-signin-section input:focus{border-color:var(--accent)}
+.owner-error{color:var(--red);font-size:0.82rem;text-align:center;padding:6px;background:rgba(239,68,68,0.1);border-radius:6px}

@@ -597,6 +597,53 @@ $('btn-auth-submit').addEventListener('click', () => {
   if (pendingUnlockMod) { const m = pendingUnlockMod; pendingUnlockMod = null; doUnlock(m); }
 });
 
+/* ── OWNER LOGIN ─────────────────────────────────────────── */
+$('btn-owner-toggle').addEventListener('click', () => {
+  const sec = $('owner-signin-section');
+  sec.classList.toggle('hidden');
+  if (!sec.classList.contains('hidden')) $('owner-username').focus();
+});
+
+$('btn-owner-submit').addEventListener('click', async () => {
+  const username = $('owner-username').value.trim();
+  const password = $('owner-password').value;
+  const errEl    = $('owner-error');
+  const btn      = $('btn-owner-submit');
+  if (!username || !password) return;
+  errEl.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  try {
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({username, password}),
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      window.location.replace('/admin');
+    } else {
+      errEl.textContent = data.error || 'Invalid credentials';
+      errEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Sign In as Owner →';
+    }
+  } catch {
+    errEl.textContent = 'Connection error — try again';
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Sign In as Owner →';
+  }
+});
+
+// Allow Enter key in owner fields
+['owner-username','owner-password'].forEach(id => {
+  $(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('btn-owner-submit').click();
+  });
+});
+
 /* ── TERMS ───────────────────────────────────────────────── */
 $('btn-show-terms').addEventListener('click', e => { e.preventDefault(); show('terms-modal'); });
 $('btn-close-terms').addEventListener('click', () => hide('terms-modal'));

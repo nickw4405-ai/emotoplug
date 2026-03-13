@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'eMotoFetch — Top Quality Mods for Less',
+  title: 'emotoplug — Top Quality Ebike Mods for Less',
 };
 
 export default function RootLayout({ children }) {
@@ -9,6 +9,9 @@ export default function RootLayout({ children }) {
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Boogaloo&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="/style.css" />
         {stripeKey && (
           <>
