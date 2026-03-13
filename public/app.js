@@ -372,7 +372,9 @@ function buildShopLinks(mod, aq, eq) {
       : `<a class="shop-btn amazon" href="https://www.amazon.com/s?k=${aq}" target="_blank" rel="noopener">🛒 Amazon</a>`}
     ${ebayInfo
       ? `<a class="shop-btn ebay" href="${mod.ebay_direct}" target="_blank" rel="noopener">${ebayInfo.label}</a>`
-      : `<a class="shop-btn ebay" href="https://www.ebay.com/sch/i.html?_nkw=${eq}&LH_BIN=1&_sop=15" target="_blank" rel="noopener">🏷️ eBay</a>`}
+      : `<a class="shop-btn ebay" href="#"
+           onclick="openDirect(event,this,${JSON.stringify(mod.ebay_search||mod.title||'')},1000);return false"
+           target="_blank" rel="noopener">🏷️ Find Cheapest New ↗</a>`}
     <a class="shop-btn google" href="https://www.google.com/search?tbm=shop&q=${aq}" target="_blank" rel="noopener">🔍 Compare Prices</a>
   `;
 }
