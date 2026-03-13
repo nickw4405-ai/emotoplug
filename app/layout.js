@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'emotoplug — Top Quality Ebike Mods for Less',
+  title: 'emotoplug — Top Quality Ebike Mods for Less ⚡',
 };
 
 export default function RootLayout({ children }) {
