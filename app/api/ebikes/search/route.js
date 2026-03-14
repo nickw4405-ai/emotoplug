@@ -2,10 +2,18 @@ import { NextResponse } from 'next/server';
 import { ebikeSearch } from '../../../../lib/ai.js';
 import { findOfficialUrl, findProductUrl } from '../../../../lib/bike-urls.js';
 import { findDirectUrls } from '../../../../lib/ebike-direct.js';
+import { verifySubscriptionToken } from '../../../../lib/subscription.js';
 
 export const maxDuration = 30;
 
 export async function GET(req) {
+  // ── Subscription gate ──────────────────────────────────────────
+  const authHeader = req.headers.get('authorization') || '';
+  const token = authHeader.replace('Bearer ', '').trim();
+  if (!verifySubscriptionToken(token)) {
+    return NextResponse.json({ error: 'subscription_required' }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const q = searchParams.get('q') || 'cheap ebike';
 

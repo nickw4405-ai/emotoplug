@@ -12,26 +12,6 @@ export default function Page() {
     <>
       <div className="bg-glow"></div>
 
-      {/* ── SOLAR SYSTEM BACKGROUND ── */}
-      <div className="solar-system">
-        <div className="ss-sun"></div>
-        {/* Mercury */}
-        <div className="ss-orbit ss-o1"><div className="ss-planet ss-p1"></div></div>
-        {/* Venus */}
-        <div className="ss-orbit ss-o2"><div className="ss-planet ss-p2"></div></div>
-        {/* Earth + Moon */}
-        <div className="ss-orbit ss-o3">
-          <div className="ss-planet ss-p3">
-            <div className="ss-moon-orbit"><div className="ss-moon"></div></div>
-          </div>
-        </div>
-        {/* Mars */}
-        <div className="ss-orbit ss-o4"><div className="ss-planet ss-p4"></div></div>
-        {/* Jupiter */}
-        <div className="ss-orbit ss-o5"><div className="ss-planet ss-p5"></div></div>
-        {/* Saturn (with ring via ::after) */}
-        <div className="ss-orbit ss-o6"><div className="ss-planet ss-p6"></div></div>
-      </div>
 
       {/* ── HEADER ── */}
       <header>
@@ -256,13 +236,127 @@ export default function Page() {
         {/* ── CHEAP EBIKES SHOP ── */}
         <section className="card" id="cheap-ebikes-section">
           <h2>🚲 Shop Quality Ebikes for Less</h2>
-          <p className="section-sub">Find top-rated complete ebikes at great prices — sourced live from eBay</p>
+          <p className="section-sub">Find top-rated complete ebikes at great prices — new &amp; used, best prices on eBay</p>
           <div className="search-bar ebike-search-bar">
             <span className="search-icon">🚲</span>
-            <input id="ebike-search-input" type="text" placeholder="Search ebikes… fat tire, commuter, under $1000…" autoComplete="off" />
+            <input id="ebike-search-input" type="text" placeholder="Search ebikes… fat tire, commuter, Sur-Ron, under $1000…" autoComplete="off" />
             <button className="btn btn-primary" id="btn-ebike-search">Find Deals</button>
           </div>
+          <div className="trending-tags" style={{marginTop:'14px'}}>
+            <span className="tag-label">🔥 Popular:</span>
+            {[
+              {label:'⚡ Sur-Ron', q:'Sur-Ron Light Bee X'},
+              {label:'🏍️ Talaria Sting', q:'Talaria Sting'},
+              {label:'🏔️ Segway X260', q:'Segway X260'},
+              {label:'🛞 Fat Tire', q:'fat tire ebike'},
+              {label:'🏙️ Commuter', q:'commuter ebike under $1500'},
+              {label:'📦 Folding', q:'folding ebike'},
+              {label:'💰 Under $1k', q:'ebike under $1000'},
+              {label:'🏍️ Electric Dirt', q:'electric dirt bike off-road'},
+            ].map(({label, q}) => (
+              <button key={q} className="trend-tag ebike-trend-tag" data-q={q}>{label}</button>
+            ))}
+          </div>
         </section>
+
+        {/* ── SUBSCRIPTION PAYWALL MODAL ── */}
+        <div id="sub-paywall-modal" className="modal hidden">
+          <div className="modal-backdrop" id="sub-paywall-backdrop"></div>
+          <div className="modal-box sub-paywall-box">
+            <button className="btn-close" id="btn-close-paywall" style={{position:'absolute',top:'14px',right:'14px'}}>✕</button>
+
+            <div className="sub-paywall-header">
+              <div className="sub-paywall-icon">🚲</div>
+              <h2>Unlock emotoplug</h2>
+              <p>Full access — ebike finder, scam checker, bike mod finder</p>
+            </div>
+
+            {/* ── Tabs ── */}
+            <div className="sub-tabs">
+              <button className="sub-tab active" id="sub-tab-pay">💳 Pay $20/yr</button>
+              <button className="sub-tab" id="sub-tab-survey">📋 Earn Free</button>
+            </div>
+
+            {/* ── PAY TAB ── */}
+            <div id="sub-pane-pay" className="sub-pane">
+              <div className="sub-price-card">
+                <div className="sub-price-amount">$20</div>
+                <div className="sub-price-period">per year</div>
+                <div className="sub-price-note">Cancel anytime · Secure via Stripe</div>
+              </div>
+              <ul className="sub-features">
+                <li>✅ Unlimited ebike searches</li>
+                <li>✅ New vs Used price comparison</li>
+                <li>✅ Direct cheapest eBay listings</li>
+                <li>✅ Budget filter ($1k / $2k / $3k / $5k)</li>
+                <li>✅ AI-powered bike recommendations</li>
+              </ul>
+              <div className="sub-form">
+                <input id="sub-name"  type="text"  placeholder="Your name"  autoComplete="name" />
+                <input id="sub-email" type="email" placeholder="Your email" autoComplete="email" />
+                <input id="sub-discount-code" type="text" placeholder="Discount code (optional)" style={{textTransform:'uppercase'}} />
+                <button className="btn btn-primary btn-large sub-cta-btn" id="btn-subscribe">Subscribe — $20 / year →</button>
+                <p id="sub-error" className="sub-error hidden"></p>
+                <p className="sub-legal">By subscribing you agree to our <span id="paywall-terms-link" style={{cursor:'pointer',textDecoration:'underline'}}>Terms of Service</span>. Auto-renews annually.</p>
+              </div>
+            </div>
+
+            {/* ── SURVEY / EARN FREE TAB ── */}
+            <div id="sub-pane-survey" className="sub-pane hidden">
+              <div className="survey-how">
+                <p>🎯 Complete easy surveys → Earn credits → Get free access</p>
+                <ul style={{textAlign:'left',margin:'8px 0 4px 0',paddingLeft:'1.2em',lineHeight:'1.8'}}>
+                  <li>Every <strong>$1</strong> a survey pays = <strong>100 Credits</strong></li>
+                  <li>Reach <strong>2,000 Credits ($20)</strong> → get <strong>1 year FREE</strong></li>
+                  <li>Got fewer? Hit <em>Combine</em> anytime for a <strong>% discount code</strong></li>
+                </ul>
+              </div>
+
+              {/* Progress bar */}
+              <div className="survey-progress-wrap">
+                <div className="survey-progress-labels">
+                  <span id="survey-dollars-text">$0.00 earned</span>
+                  <span id="survey-goal-text">$20.00 goal</span>
+                </div>
+                <div className="survey-progress-bar">
+                  <div className="survey-progress-fill" id="survey-progress-fill"></div>
+                </div>
+                <div className="survey-progress-sub" id="survey-progress-sub">Complete a survey below to start earning</div>
+              </div>
+
+              {/* Survey iframe */}
+              <div className="survey-iframe-wrap">
+                <iframe id="survey-iframe" className="survey-iframe" src="about:blank" title="Earn credits with surveys"></iframe>
+                <div id="survey-not-configured" className="survey-not-configured">
+                  <div style={{fontSize:'2rem',marginBottom:'8px'}}>📋</div>
+                  <p style={{fontWeight:700,marginBottom:'6px'}}>Survey partners coming soon!</p>
+                  <p>We&apos;re finalising our survey partnerships. Check back soon — you&apos;ll be able to earn free access by completing quick paid surveys.</p>
+                </div>
+              </div>
+
+              {/* Combine button */}
+              <button className="btn btn-accent btn-large survey-combine-btn" id="btn-combine-credits" disabled>
+                🎁 Combine Credits → Get Discount
+              </button>
+              <p id="survey-combine-msg" className="sub-error hidden"></p>
+              <p id="survey-combine-success" className="survey-combine-success hidden"></p>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ── SUBSCRIPTION SUCCESS MODAL ── */}
+        <div id="sub-success-modal" className="modal hidden">
+          <div className="modal-backdrop" id="sub-success-backdrop"></div>
+          <div className="modal-box" style={{textAlign:'center',padding:'36px 28px'}}>
+            <div style={{fontSize:'3rem',marginBottom:'12px'}}>🎉</div>
+            <h2 style={{marginBottom:'8px'}}>You&apos;re subscribed!</h2>
+            <p style={{color:'var(--muted)',marginBottom:'20px'}}>Access unlocked for 1 year. Start searching now.</p>
+            <button className="btn btn-primary btn-large" id="btn-sub-success-close" style={{width:'100%'}}>
+              Start Finding Deals →
+            </button>
+          </div>
+        </div>
 
         {/* ── EBIKE RESULTS MODAL ── */}
         <div id="ebike-modal" className="modal hidden">
