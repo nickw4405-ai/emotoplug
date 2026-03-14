@@ -87,6 +87,10 @@ a{color:var(--accent);text-decoration:none}
 /* ── Header ── */
 header{position:relative;z-index:10;border-bottom:1px solid var(--border);padding:0 24px}
 .header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px}
+.header-auth{display:flex;align-items:center;gap:8px}
+.header-user-name{color:var(--text);font-size:0.9rem;font-weight:600}
+.btn-ghost{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.85rem;padding:6px 10px;border-radius:8px;transition:color 0.2s}
+.btn-ghost:hover{color:var(--text)}
 .logo{display:flex;align-items:center}
 .logo-text{
   font-family:'Boogaloo',cursive;

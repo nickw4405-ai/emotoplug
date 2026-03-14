@@ -885,46 +885,136 @@ async function runEbikeSearch() {
   }
 }
 
-/* ── AUTH / SIGN IN ──────────────────────────────────────── */
+/* ── USER ACCOUNT AUTH ───────────────────────────────────── */
 let currentUser = null;
 
 function loadUserFromStorage() {
   try { currentUser = JSON.parse(localStorage.getItem('emf_user') || 'null'); } catch {}
-  if (currentUser) $('btn-signin-header').textContent = `Hi, ${currentUser.name.split(' ')[0]}`;
+  updateHeaderForUser();
 }
 
-$('btn-signin-header').addEventListener('click', () => {
-  $('auth-title').textContent = 'Sign In';
-  show('auth-modal');
-});
+function updateHeaderForUser() {
+  if (currentUser) {
+    const firstName = (currentUser.name || currentUser.email || '').split(/[\s@]/)[0];
+    $('header-user-name').textContent = `Hi, ${firstName}`;
+    $('header-user-name').classList.remove('hidden');
+    $('btn-signin-header').classList.add('hidden');
+    $('btn-register-header').classList.add('hidden');
+    $('btn-signout-header').classList.remove('hidden');
+    // Link sub token to account if we have one
+    const token = getSubToken();
+    if (token && currentUser.email && !currentUser.subLinked) {
+      fetch('/api/user/link-sub', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ email: currentUser.email, subToken: token }),
+      }).then(() => {
+        currentUser.subLinked = true;
+        localStorage.setItem('emf_user', JSON.stringify(currentUser));
+      }).catch(() => {});
+    }
+  } else {
+    $('header-user-name').classList.add('hidden');
+    $('btn-signin-header').classList.remove('hidden');
+    $('btn-register-header').classList.remove('hidden');
+    $('btn-signout-header').classList.add('hidden');
+  }
+}
+
+function switchAuthTab(tab) {
+  ['signin','register'].forEach(t => {
+    $(`auth-tab-${t}`).classList.toggle('active', t === tab);
+    t === tab ? show(`auth-pane-${t}`) : hide(`auth-pane-${t}`);
+  });
+}
+
+$('btn-signin-header').addEventListener('click', () => { switchAuthTab('signin'); show('auth-modal'); });
+$('btn-register-header').addEventListener('click', () => { switchAuthTab('register'); show('auth-modal'); });
 $('btn-close-auth').addEventListener('click', () => hide('auth-modal'));
 $('auth-backdrop').addEventListener('click', () => hide('auth-modal'));
+$('auth-tab-signin').addEventListener('click', () => switchAuthTab('signin'));
+$('auth-tab-register').addEventListener('click', () => switchAuthTab('register'));
 
-$('terms-check').addEventListener('change', () => {
-  $('btn-auth-submit').disabled = !$('terms-check').checked ||
-    !$('auth-name').value.trim() || !$('auth-email').value.trim();
-});
-['auth-name','auth-email'].forEach(id => {
-  $(id).addEventListener('input', () => {
-    $('btn-auth-submit').disabled = !$('terms-check').checked ||
-      !$('auth-name').value.trim() || !$('auth-email').value.trim();
-  });
+$('btn-signout-header').addEventListener('click', () => {
+  currentUser = null;
+  localStorage.removeItem('emf_user');
+  updateHeaderForUser();
 });
 
-$('btn-auth-submit').addEventListener('click', () => {
-  currentUser = {name: $('auth-name').value.trim(), email: $('auth-email').value.trim()};
-  localStorage.setItem('emf_user', JSON.stringify(currentUser));
-  $('btn-signin-header').textContent = `Hi, ${currentUser.name.split(' ')[0]}`;
-  hide('auth-modal');
-  if (pendingUnlockMod) { const m = pendingUnlockMod; pendingUnlockMod = null; doUnlock(m); }
+// Sign In
+$('btn-signin-submit').addEventListener('click', async () => {
+  const email = $('signin-email').value.trim();
+  const password = $('signin-password').value;
+  const errEl = $('signin-error');
+  const btn = $('btn-signin-submit');
+  if (!email || !password) return;
+  errEl.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch('/api/user/login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      currentUser = { name: data.name || email, email, subLinked: !!data.subToken };
+      localStorage.setItem('emf_user', JSON.stringify(currentUser));
+      if (data.subToken) {
+        localStorage.setItem('emf_sub_token', data.subToken);
+      }
+      updateHeaderForUser();
+      hide('auth-modal');
+    } else {
+      errEl.textContent = data.error || 'Invalid email or password.';
+      errEl.classList.remove('hidden');
+    }
+  } catch { errEl.textContent = 'Connection error — try again.'; errEl.classList.remove('hidden'); }
+  btn.disabled = false; btn.textContent = 'Sign In →';
 });
 
-/* ── OWNER LOGIN ─────────────────────────────────────────── */
-$('btn-owner-toggle').addEventListener('click', () => {
-  const sec = $('owner-signin-section');
-  sec.classList.toggle('hidden');
-  if (!sec.classList.contains('hidden')) $('owner-username').focus();
+// Create Account
+$('btn-register-submit').addEventListener('click', async () => {
+  const name = $('register-name').value.trim();
+  const email = $('register-email').value.trim();
+  const password = $('register-password').value;
+  const errEl = $('register-error');
+  const btn = $('btn-register-submit');
+  if (!email || !password) return;
+  errEl.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    const res = await fetch('/api/user/register', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, email, password, subToken: getSubToken() || undefined }),
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      currentUser = { name: name || email, email, subLinked: true };
+      localStorage.setItem('emf_user', JSON.stringify(currentUser));
+      updateHeaderForUser();
+      hide('auth-modal');
+    } else {
+      errEl.textContent = data.error || 'Could not create account.';
+      errEl.classList.remove('hidden');
+    }
+  } catch { errEl.textContent = 'Connection error — try again.'; errEl.classList.remove('hidden'); }
+  btn.disabled = false; btn.textContent = 'Create Account →';
 });
+
+// Enter key support
+['signin-email','signin-password'].forEach(id => $(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-signin-submit').click(); }));
+['register-name','register-email','register-password'].forEach(id => $(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-register-submit').click(); }));
+
+/* ── OWNER LOGIN (hidden — triple-click logo to access) ──── */
+document.querySelector('.logo').addEventListener('click', (() => {
+  let clicks = 0, t;
+  return () => {
+    clicks++;
+    clearTimeout(t);
+    t = setTimeout(() => { clicks = 0; }, 600);
+    if (clicks >= 3) { clicks = 0; $('owner-signin-section').classList.remove('hidden'); show('auth-modal'); switchAuthTab('signin'); }
+  };
+})());
 
 $('btn-owner-submit').addEventListener('click', async () => {
   const username = $('owner-username').value.trim();

@@ -17,7 +17,12 @@ export default function Page() {
       <header>
         <div className="header-inner">
           <div className="logo"><span className="logo-text">emotoplug</span></div>
-          <button className="btn btn-outline btn-sm" id="btn-signin-header">Sign In</button>
+          <div className="header-auth">
+            <span id="header-user-name" className="header-user-name hidden"></span>
+            <button className="btn btn-outline btn-sm" id="btn-signin-header">Sign In</button>
+            <button className="btn btn-primary btn-sm hidden" id="btn-register-header">Create Account</button>
+            <button className="btn btn-ghost btn-sm hidden" id="btn-signout-header">Sign Out</button>
+          </div>
         </div>
       </header>
 
@@ -399,35 +404,41 @@ export default function Page() {
         </div>
       </div>
 
-      {/* ── AUTH MODAL ── */}
+      {/* ── USER ACCOUNT MODAL ── */}
       <div id="auth-modal" className="modal hidden">
         <div className="modal-backdrop" id="auth-backdrop"></div>
         <div className="modal-box">
           <div className="modal-header">
-            <h3 id="auth-title">Sign In to Unlock Best Price</h3>
+            <h3 id="auth-title">Welcome to emotoplug</h3>
             <button className="btn-close" id="btn-close-auth">✕</button>
           </div>
-          <div className="auth-body">
-            <input id="auth-name" type="text" placeholder="Your name" autoComplete="name" />
-            <input id="auth-email" type="email" placeholder="Your email" autoComplete="email" />
-            <div className="terms-box">
-              <label className="terms-label">
-                <input type="checkbox" id="terms-check" />
-                <span>I agree to the <a href="#" id="btn-show-terms">Terms of Service</a>. eMotoFetch is not responsible for purchases, pricing accuracy, or product quality. Links are provided for informational purposes only. All purchases are made directly with third-party retailers.</span>
-              </label>
-            </div>
-            <button className="btn btn-primary btn-large" id="btn-auth-submit" disabled>Continue to Unlock →</button>
+          <div className="sub-tabs" style={{marginBottom:'16px'}}>
+            <button className="sub-tab active" id="auth-tab-signin">Sign In</button>
+            <button className="sub-tab" id="auth-tab-register">Create Account</button>
+          </div>
 
-            {/* Owner sign-in section */}
-            <div className="owner-signin-divider">
-              <button className="owner-signin-toggle" id="btn-owner-toggle">🔐 Owner Sign In</button>
-            </div>
+          {/* Sign In pane */}
+          <div id="auth-pane-signin" className="auth-body">
+            <input id="signin-email" type="email" placeholder="Email address" autoComplete="email" />
+            <input id="signin-password" type="password" placeholder="Password" autoComplete="current-password" />
+            <p id="signin-error" className="sub-error hidden"></p>
+            <button className="btn btn-primary btn-large" id="btn-signin-submit">Sign In →</button>
+            {/* Hidden owner access */}
             <div id="owner-signin-section" className="owner-signin-section hidden">
               <input id="owner-username" type="text" placeholder="Username or email" autoComplete="username" />
               <input id="owner-password" type="password" placeholder="Password" autoComplete="current-password" />
               <p id="owner-error" className="owner-error hidden">Invalid credentials</p>
               <button className="btn btn-primary btn-large" id="btn-owner-submit">Sign In as Owner →</button>
             </div>
+          </div>
+
+          {/* Create Account pane */}
+          <div id="auth-pane-register" className="auth-body hidden">
+            <input id="register-name" type="text" placeholder="Your name" autoComplete="name" />
+            <input id="register-email" type="email" placeholder="Email address" autoComplete="email" />
+            <input id="register-password" type="password" placeholder="Password (min 6 characters)" autoComplete="new-password" />
+            <p id="register-error" className="sub-error hidden"></p>
+            <button className="btn btn-primary btn-large" id="btn-register-submit">Create Account →</button>
           </div>
         </div>
       </div>
