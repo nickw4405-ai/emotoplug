@@ -316,7 +316,7 @@ export default function Page() {
                   <li>Got fewer? Hit <em>Combine</em> anytime for a <strong>% discount code</strong></li>
                 </ul>
                 <p style={{fontSize:'0.82rem',color:'var(--muted)',marginTop:'6px',lineHeight:'1.6'}}>
-                  ⏱ <strong>How long does it take?</strong> If you do it all in one go, expect around <strong>3–6 hours</strong> — surveys pay $0.50–$3.00 each and take 5–20 min, so you&apos;ll need roughly 10–20 of them to hit $20.
+                  ⏱ <strong>Most people get there in a few days</strong> — knock out 2–3 surveys whenever you have 15 minutes to spare. Each one gets you closer to a free year.
                 </p>
               </div>
 
