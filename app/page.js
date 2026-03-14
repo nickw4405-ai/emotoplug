@@ -315,6 +315,9 @@ export default function Page() {
                   <li>Reach <strong>2,000 Credits ($20)</strong> → get <strong>1 year FREE</strong></li>
                   <li>Got fewer? Hit <em>Combine</em> anytime for a <strong>% discount code</strong></li>
                 </ul>
+                <p style={{fontSize:'0.82rem',color:'var(--muted)',marginTop:'6px',lineHeight:'1.6'}}>
+                  ⏱ <strong>How long does it take?</strong> Most users reach $20 in <strong>2–4 weeks</strong> doing a few surveys a day (5–15 min each). Surveys typically pay $0.50–$3.00 each, so hitting the goal usually takes <strong>10–20 surveys</strong> total.
+                </p>
               </div>
 
               {/* Progress bar */}
