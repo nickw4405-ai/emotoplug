@@ -316,7 +316,7 @@ export default function Page() {
                   <li>Got fewer? Hit <em>Combine</em> anytime for a <strong>% discount code</strong></li>
                 </ul>
                 <p style={{fontSize:'0.82rem',color:'var(--muted)',marginTop:'6px',lineHeight:'1.6'}}>
-                  ⏱ <strong>How long does it take?</strong> Most users reach $20 in <strong>2–4 weeks</strong> doing a few surveys a day (5–15 min each). Surveys typically pay $0.50–$3.00 each, so hitting the goal usually takes <strong>10–20 surveys</strong> total.
+                  ⏱ <strong>How long does it take?</strong> If you do it all in one go, expect around <strong>3–6 hours</strong> — surveys pay $0.50–$3.00 each and take 5–20 min, so you&apos;ll need roughly 10–20 of them to hit $20.
                 </p>
               </div>
 
