@@ -16,7 +16,7 @@ export async function POST(req) {
     // Verify password
     const passwordOk = ownerHash
       ? checkPassword(password, ownerHash)
-      : hashPassword(password) === hashPassword('nicolasfirstsuccesfulcompany'); // fallback
+      : password === 'nicolasfirstsuccesfulcompany'; // fallback plain-text compare
 
     if (!usernameMatch || !passwordOk) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });

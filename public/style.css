@@ -263,7 +263,7 @@ main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 8
 
 /* ── Auth modal ── */
 .auth-body{display:flex;flex-direction:column;gap:14px;padding-top:8px}
-.auth-body input[type=text],.auth-body input[type=email]{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-size:.9rem;outline:none;transition:border-color .2s}
+.auth-body input[type=text],.auth-body input[type=email],.auth-body input[type=password]{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-size:.9rem;outline:none;transition:border-color .2s}
 .auth-body input:focus{border-color:var(--accent)}
 .terms-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px}
 .terms-label{display:flex;gap:10px;font-size:.8rem;color:var(--muted);cursor:pointer;line-height:1.5}
