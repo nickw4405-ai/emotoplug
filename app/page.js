@@ -154,6 +154,10 @@ export default function Page() {
                 <option value="price-low">Price: Low → High</option>
               </select>
             </div>
+            <div id="finder-unlock-banner" className="unlock-banner hidden">
+              <span>🔒 Click any product to unlock pricing &amp; buy links</span>
+              <button className="btn btn-primary btn-sm" onClick="showPaywall()">Get Access →</button>
+            </div>
             <div className="mods-grid" id="finder-mods-grid"></div>
             <div style={{textAlign:'center',marginTop:'16px'}}>
               <button className="btn btn-outline btn-sm" id="btn-back-to-query">← Search Again</button>
@@ -180,6 +184,10 @@ export default function Page() {
           <div className="section-header">
             <h2 id="search-results-title">Results</h2>
             <button className="btn btn-outline btn-sm" id="btn-clear-search">✕ Clear</button>
+          </div>
+          <div id="search-unlock-banner" className="unlock-banner hidden">
+            <span>🔒 Click any product to unlock pricing &amp; buy links</span>
+            <button className="btn btn-primary btn-sm" onClick="showPaywall()">Get Access →</button>
           </div>
           <div className="mods-grid" id="search-results-grid"></div>
         </section>

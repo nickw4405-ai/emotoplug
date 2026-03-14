@@ -206,6 +206,9 @@ async function doSearch() {
   $('search-results-title').textContent = q ? `Results for "${q}" (${mods.length})` : `All Mods (${mods.length})`;
   grid.innerHTML = mods.map(buildModCard).join('');
   attachCardClicks(grid, mods);
+  // Show unlock banner if not subscribed
+  const banner = $('search-unlock-banner');
+  if (banner) { getSubToken() ? banner.classList.add('hidden') : banner.classList.remove('hidden'); }
   show('search-results-section');
   $('search-results-section').scrollIntoView({behavior:'smooth'});
 }
@@ -313,7 +316,6 @@ $('bike-text-input').addEventListener('keydown', e => { if (e.key==='Enter') ana
 
 /* ── ANALYZE ─────────────────────────────────────────────── */
 async function analyzeImage(mode) {
-  if (!getSubToken()) { showPaywall(); return; }
   hide('finder-error');
   if (mode === 'image' && !currentImage) return;
   if (mode === 'text' && !$('bike-text-input').value.trim()) return;
@@ -412,7 +414,6 @@ $('bike-mod-query').addEventListener('keydown', e => {
 });
 
 $('btn-show-all-mods').addEventListener('click', () => {
-  if (!getSubToken()) { showPaywall(); return; }
   renderFinderMods(finderMods);
   $('finder-mods-title').textContent = 'All Recommended Mods';
   hide('bike-query-section');
@@ -427,7 +428,6 @@ $('btn-back-to-query').addEventListener('click', () => {
 });
 
 async function searchModsForBike(query) {
-  if (!getSubToken()) { showPaywall(); return; }
   hide('bike-query-section');
   show('finder-mods-loading');
   hide('finder-mods-section');
@@ -465,6 +465,9 @@ function renderFinderMods(mods) {
   const grid = $('finder-mods-grid');
   grid.innerHTML = sorted.map(buildModCard).join('');
   attachCardClicks(grid, sorted);
+  // Show unlock banner if not subscribed
+  const banner = $('finder-unlock-banner');
+  if (banner) { getSubToken() ? banner.classList.add('hidden') : banner.classList.remove('hidden'); }
 }
 
 $('finder-sort').addEventListener('change', () => renderFinderMods(finderMods));
