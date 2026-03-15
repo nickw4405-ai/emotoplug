@@ -5,16 +5,189 @@ let currentImage = null, finderMods = [], stream = null;
 let pendingUnlockMod = null, currentBike = null;
 
 /* ── DOM ── */
-const $ = id => document.getElementById(id);
+const _noop = { addEventListener:()=>{}, removeEventListener:()=>{}, classList:{add:()=>{},remove:()=>{},contains:()=>false,toggle:()=>{}}, style:{}, querySelectorAll:()=>[], querySelector:()=>null, scrollIntoView:()=>{}, get value(){return '';}, set value(v){}, get textContent(){return '';}, set textContent(v){}, get src(){return '';}, set src(v){}, get disabled(){return false;}, set disabled(v){}, get innerHTML(){return '';}, set innerHTML(v){}, get checked(){return false;}, set checked(v){} };
+const $ = id => document.getElementById(id) || _noop;
 const show = id => $(id)?.classList.remove('hidden');
 const hide = id => $(id)?.classList.add('hidden');
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
+/* ── Subscription token helpers ── */
+const SUB_KEY = 'emf_sub';
+
+function getSubToken() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SUB_KEY) || 'null');
+    if (!s || !s.token) return null;
+    if (s.exp && Date.now() > s.exp) { localStorage.removeItem(SUB_KEY); return null; }
+    return s.token;
+  } catch { return null; }
+}
+
+function saveSubToken(token, expiresAt) {
+  localStorage.setItem(SUB_KEY, JSON.stringify({ token, exp: expiresAt }));
+}
+
+function showPaywall() {
+  $('sub-name').value = ''; $('sub-email').value = '';
+  $('sub-discount-code').value = '';
+  $('sub-error').classList.add('hidden');
+  // Always open on Pay tab
+  switchPaywallTab('pay');
+  show('sub-paywall-modal');
+}
+
+/* ── PAYWALL TAB SWITCHING ── */
+function switchPaywallTab(tab) {
+  document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+  $(`sub-tab-${tab}`)?.classList.add('active');
+  ['pay','survey'].forEach(t => { t === tab ? show(`sub-pane-${t}`) : hide(`sub-pane-${t}`); });
+  if (tab === 'survey') initSurveyTab();
+}
+$('sub-tab-pay')?.addEventListener('click',    () => switchPaywallTab('pay'));
+$('sub-tab-survey')?.addEventListener('click', () => switchPaywallTab('survey'));
+
+/* ── SURVEY SESSION ── */
+const SURVEY_SESSION_KEY = 'emf_svs';
+function getSurveySession() {
+  let sid = localStorage.getItem(SURVEY_SESSION_KEY);
+  if (!sid) {
+    sid = (crypto.randomUUID ? crypto.randomUUID() :
+      Math.random().toString(36).slice(2) + Date.now().toString(36));
+    localStorage.setItem(SURVEY_SESSION_KEY, sid);
+  }
+  return sid;
+}
+
+/* ── SURVEY TAB INIT ── */
+let _surveyTabInited = false;
+async function initSurveyTab() {
+  loadSurveyCredits(); // always refresh credits
+  if (_surveyTabInited) return;
+  _surveyTabInited = true;
+
+  try {
+    const r = await fetch('/api/survey/config');
+    const { configured, app_id } = await r.json();
+    if (configured && app_id) {
+      const sid = getSurveySession();
+      $('survey-iframe').src =
+        `https://offers.cpx-research.com/index.php?app_id=${app_id}&ext_user_id=${encodeURIComponent(sid)}&output_method=iframe`;
+      hide('survey-not-configured');
+    } else {
+      $('survey-iframe').style.display = 'none';
+      show('survey-not-configured');
+    }
+  } catch {
+    $('survey-iframe').style.display = 'none';
+    show('survey-not-configured');
+  }
+}
+
+/* ── SURVEY CREDITS ── */
+async function loadSurveyCredits() {
+  const sid = getSurveySession();
+  try {
+    const r = await fetch(`/api/survey/credits?session_id=${encodeURIComponent(sid)}`);
+    const d = await r.json();
+    const credits = d.credits || 0;
+    const goal    = d.goal || 2000;
+    const dollars = parseFloat(d.dollars || 0);
+    const goalDol = parseFloat(d.goal_dollars || 20);
+    const pct     = Math.min(100, Math.round((credits / goal) * 100));
+
+    $('survey-dollars-text').textContent = `$${dollars.toFixed(2)} earned`;
+    $('survey-goal-text').textContent    = `$${goalDol.toFixed(2)} goal`;
+    $('survey-progress-fill').style.width = pct + '%';
+
+    const btn = $('btn-combine-credits');
+    if (credits >= goal) {
+      $('survey-progress-sub').textContent = '🎉 Goal reached! Claim your free access below.';
+      btn.textContent = '🎉 Claim Free Access!';
+      btn.disabled = false;
+    } else if (credits > 0) {
+      $('survey-progress-sub').textContent = `${pct}% there — keep going!`;
+      btn.textContent = `🎁 Combine → Get ${pct}% Discount Code`;
+      btn.disabled = false;
+    } else {
+      $('survey-progress-sub').textContent = 'Complete a survey below to start earning';
+      btn.textContent = '🎁 Combine Credits → Get Discount';
+      btn.disabled = true;
+    }
+  } catch { /* silent */ }
+}
+
+/* ── COMBINE CREDITS ── */
+$('btn-combine-credits')?.addEventListener('click', async () => {
+  const btn   = $('btn-combine-credits');
+  const msgEl = $('survey-combine-msg');
+  const sucEl = $('survey-combine-success');
+  msgEl.classList.add('hidden'); sucEl.classList.add('hidden');
+
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Combining…'; btn.disabled = true;
+
+  try {
+    const sid = getSurveySession();
+    const r   = await fetch('/api/survey/combine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sid }),
+    });
+    const d = await r.json();
+
+    if (!r.ok || d.error) {
+      msgEl.textContent = d.error || 'Something went wrong. Try again.';
+      msgEl.classList.remove('hidden');
+      btn.textContent = orig; btn.disabled = false;
+      return;
+    }
+
+    if (d.type === 'free_access') {
+      saveSubToken(d.token, d.expires_at);
+      hide('sub-paywall-modal');
+      show('sub-success-modal');
+      loadSurveyCredits();
+      return;
+    }
+
+    if (d.type === 'discount_code') {
+      sucEl.innerHTML = `
+        <div class="discount-code-reveal">
+          <div class="discount-code-label">Your ${d.pct}% discount code:</div>
+          <div class="discount-code-value" id="discount-code-display">${d.code}</div>
+          <button class="btn btn-sm btn-outline discount-code-copy" id="btn-copy-code">📋 Copy</button>
+          <div class="discount-code-hint">Switch to the 💳 Pay tab, paste this code, then subscribe at ${d.pct}% off!</div>
+        </div>`;
+      sucEl.classList.remove('hidden');
+      $('btn-copy-code')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(d.code).then(() => {
+          $('btn-copy-code').textContent = '✅ Copied!';
+          setTimeout(() => { $('btn-copy-code').textContent = '📋 Copy'; }, 2000);
+        });
+      });
+      btn.textContent = orig; btn.disabled = true; // credits are gone
+      loadSurveyCredits();
+    }
+  } catch(e) {
+    msgEl.textContent = 'Request failed. Try again.';
+    msgEl.classList.remove('hidden');
+    btn.textContent = orig; btn.disabled = false;
+  }
+});
+
 /* ── On load: check Stripe return ── */
 window.addEventListener('load', () => {
   const p = new URLSearchParams(location.search);
+
+  // Existing unlock flow
   const sid = p.get('unlocked');
   if (sid) { history.replaceState({}, '', '/'); verifyUnlock(sid); }
+
+  // Subscription return from Stripe
+  const subSid   = p.get('subscribed');
+  const subEmail = p.get('sub_email') || '';
+  if (subSid) { history.replaceState({}, '', '/'); verifySubscription(subSid, subEmail); }
+
   initTrendingCards();
   loadUserFromStorage();
 });
@@ -26,20 +199,43 @@ document.querySelectorAll('.trend-tag').forEach(btn =>
   btn.addEventListener('click', () => { $('search-input').value = btn.dataset.q; doSearch(); }));
 $('btn-clear-search').addEventListener('click', clearSearch);
 
-async function doSearch() {
+let lastSearchMods = [];
+
+async function doSearch(catFilter) {
   const q = $('search-input').value.trim();
-  const res = await fetch(`/api/mods/search?q=${encodeURIComponent(q)}`);
-  const mods = await res.json();
+  // Reset category chips to All when doing a fresh search (no catFilter arg)
+  if (!catFilter) {
+    document.querySelectorAll('#search-cat-chips .chip').forEach(c => c.classList.remove('active'));
+    const allChip = document.querySelector('#search-cat-chips .chip[data-cat="all"]');
+    if (allChip) allChip.classList.add('active');
+    const res = await fetch(`/api/mods/search?q=${encodeURIComponent(q)}`);
+    lastSearchMods = await res.json();
+  }
+  const mods = catFilter && catFilter !== 'all'
+    ? lastSearchMods.filter(m => m.category === catFilter)
+    : lastSearchMods;
   const grid = $('search-results-grid');
   $('search-results-title').textContent = q ? `Results for "${q}" (${mods.length})` : `All Mods (${mods.length})`;
   grid.innerHTML = mods.map(buildModCard).join('');
   attachCardClicks(grid, mods);
+  const banner = $('search-unlock-banner');
+  if (banner) { getSubToken() ? banner.classList.add('hidden') : banner.classList.remove('hidden'); }
   show('search-results-section');
-  $('search-results-section').scrollIntoView({behavior:'smooth'});
+  if (!catFilter) $('search-results-section').scrollIntoView({behavior:'smooth'});
 }
+
+// Category chip filtering on search results
+document.addEventListener('click', e => {
+  const chip = e.target.closest('#search-cat-chips .chip');
+  if (!chip) return;
+  document.querySelectorAll('#search-cat-chips .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  doSearch(chip.dataset.cat);
+});
 
 function clearSearch() {
   $('search-input').value = '';
+  lastSearchMods = [];
   hide('search-results-section');
 }
 
@@ -49,6 +245,9 @@ function initTrendingCards() {
   grid.querySelectorAll('.mod-card.preloaded').forEach(card => {
     const mod = JSON.parse(card.dataset.mod);
     card.addEventListener('click', () => openModModal(mod));
+    card.querySelectorAll('.mod-img').forEach(img => {
+      img.addEventListener('error', () => { img.style.display = 'none'; });
+    });
   });
 }
 
@@ -287,6 +486,9 @@ function renderFinderMods(mods) {
   const grid = $('finder-mods-grid');
   grid.innerHTML = sorted.map(buildModCard).join('');
   attachCardClicks(grid, sorted);
+  // Show unlock banner if not subscribed
+  const banner = $('finder-unlock-banner');
+  if (banner) { getSubToken() ? banner.classList.add('hidden') : banner.classList.remove('hidden'); }
 }
 
 $('finder-sort').addEventListener('change', () => renderFinderMods(finderMods));
@@ -369,12 +571,16 @@ function buildShopLinks(mod, aq, eq) {
       : `<a class="shop-btn amazon" href="https://www.amazon.com/s?k=${aq}" target="_blank" rel="noopener">🛒 Amazon</a>`}
     ${ebayInfo
       ? `<a class="shop-btn ebay" href="${mod.ebay_direct}" target="_blank" rel="noopener">${ebayInfo.label}</a>`
-      : `<a class="shop-btn ebay" href="https://www.ebay.com/sch/i.html?_nkw=${eq}&LH_BIN=1&_sop=15" target="_blank" rel="noopener">🏷️ eBay</a>`}
+      : `<a class="shop-btn ebay" href="#"
+           onclick="openDirect(event,this,${JSON.stringify(mod.ebay_search||mod.title||'')},1000);return false"
+           target="_blank" rel="noopener">🏷️ Find Cheapest New ↗</a>`}
     <a class="shop-btn google" href="https://www.google.com/search?tbm=shop&q=${aq}" target="_blank" rel="noopener">🔍 Compare Prices</a>
   `;
 }
 
 function openModModal(mod) {
+  // PAYWALL DISABLED — re-enable when ready
+  // if (!getSubToken()) { showPaywall(); return; }
   const savings = mod.savings || (mod.retail_price && mod.found_price ? mod.retail_price - mod.found_price : 0);
   const imgSrc = mod.image_url || `/api/product-image?q=${encodeURIComponent(mod.ebay_search||mod.title||'')}`;
   const aq = encodeURIComponent(mod.amazon_search || mod.title || '');
@@ -423,6 +629,100 @@ $('ebike-search-input').addEventListener('keydown', e => { if(e.key==='Enter') s
 $('btn-close-ebike').addEventListener('click', () => hide('ebike-modal'));
 $('ebike-modal-backdrop').addEventListener('click', () => hide('ebike-modal'));
 
+/* Quick-search chips in the ebike section */
+document.querySelectorAll('.ebike-trend-tag').forEach(btn =>
+  btn.addEventListener('click', () => { $('ebike-search-input').value = btn.dataset.q; searchEbikes(); }));
+
+/* ── SUBSCRIPTION PAYWALL ─────────────────────────────────── */
+$('btn-close-paywall').addEventListener('click',  () => hide('sub-paywall-modal'));
+$('sub-paywall-backdrop').addEventListener('click', () => hide('sub-paywall-modal'));
+$('btn-sub-success-close').addEventListener('click', () => {
+  hide('sub-success-modal');
+  // Run the pending search after subscription confirmed
+  runEbikeSearch();
+});
+$('sub-success-backdrop').addEventListener('click', () => hide('sub-success-modal'));
+$('paywall-terms-link').addEventListener('click', () => show('terms-modal'));
+
+let _pendingSearchQuery = null;
+
+$('btn-subscribe').addEventListener('click', async () => {
+  const name          = $('sub-name').value.trim();
+  const email         = $('sub-email').value.trim();
+  const discount_code = ($('sub-discount-code').value.trim().toUpperCase()) || undefined;
+  const errEl         = $('sub-error');
+  errEl.classList.add('hidden');
+
+  if (!name || !email) {
+    errEl.textContent = 'Please enter your name and email.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errEl.textContent = 'Please enter a valid email address.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  const btn  = $('btn-subscribe');
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Setting up payment…';
+  btn.disabled = true;
+
+  try {
+    const res  = await fetch('/api/subscription/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, discount_code }),
+    });
+    const data = await res.json();
+
+    if (data.error === 'stripe_not_configured') {
+      errEl.textContent = '💳 Payment system is being set up — check back soon!';
+      errEl.classList.remove('hidden');
+      btn.textContent = orig; btn.disabled = false;
+      return;
+    }
+    if (data.error === 'invalid_code') {
+      errEl.textContent = '❌ ' + (data.message || 'Discount code is invalid or already used.');
+      errEl.classList.remove('hidden');
+      btn.textContent = orig; btn.disabled = false;
+      return;
+    }
+    // Free access via 100% discount code
+    if (data.type === 'free_access') {
+      saveSubToken(data.token, data.expires_at);
+      hide('sub-paywall-modal');
+      show('sub-success-modal');
+      return;
+    }
+    if (data.checkout_url) {
+      location.href = data.checkout_url;
+    } else {
+      throw new Error(data.error || 'Could not start checkout');
+    }
+  } catch (e) {
+    errEl.textContent = e.message || 'Something went wrong. Try again.';
+    errEl.classList.remove('hidden');
+    btn.textContent = orig; btn.disabled = false;
+  }
+});
+
+async function verifySubscription(sessionId, email) {
+  try {
+    const res  = await fetch('/api/subscription/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, email }),
+    });
+    const data = await res.json();
+    if (data.token) {
+      saveSubToken(data.token, data.expires_at);
+      show('sub-success-modal');
+    }
+  } catch { /* silent */ }
+}
+
 /* openDirect — called by eBay buttons; fetches a live direct itm/ URL at click
    time so we never navigate to a stale pre-fetched listing that may have sold. */
 async function openDirect(event, btn, search, condition) {
@@ -469,6 +769,10 @@ async function filterUsed(btn, search, maxPrice) {
   }
 }
 
+function isDirectLink(url) {
+  return url && url.includes('/itm/');
+}
+
 function buildEbikeCard(b) {
   const isRare = b.used_price_min === 0;
   const search = b.ebay_search || b.title;
@@ -477,8 +781,6 @@ function buildEbikeCard(b) {
   const gShop    = b.google_shop_url || `https://www.google.com/search?tbm=shop&q=${encodeURIComponent(b.title+' electric bike new')}`;
 
   // ── New column: up to 3 guaranteed-working buttons ──
-  // product_url = specific model page (e.g. us.sur-ron.com/lightbee/x) or brand page
-  // official_url = brand-level page (only shown separately if different from product_url)
   const productUrl  = b.product_url || b.official_url || '';
   const officialUrl = b.official_url || '';
   const showSeparateOfficial = officialUrl && productUrl && officialUrl !== productUrl;
@@ -489,9 +791,14 @@ function buildEbikeCard(b) {
   const officialBtn = showSeparateOfficial
     ? `<a class="ebike-option-btn official-btn" href="${officialUrl}" target="_blank" rel="noopener">🌐 Official Site</a>`
     : '';
-  const cheapNewBtn = `<a class="ebike-option-btn cheap-btn" href="${newEbay}"
-    onclick="openDirect(event,this,'${search.replace(/'/g,"\\'")}',1000);return false"
-    target="_blank" rel="noopener">💸 Cheapest New on eBay</a>`;
+
+  // If we already have a direct itm/ link, open it straight away (no live lookup needed)
+  const cheapNewBtn = isDirectLink(newEbay)
+    ? `<a class="ebike-option-btn cheap-btn" href="${newEbay}"
+        target="_blank" rel="noopener">💸 Cheapest New on eBay ↗</a>`
+    : `<a class="ebike-option-btn cheap-btn" href="${newEbay}"
+        onclick="openDirect(event,this,'${search.replace(/'/g,"\\'")}',1000);return false"
+        target="_blank" rel="noopener">💸 Cheapest New on eBay</a>`;
 
   // ── Used column ──
   let usedSection;
@@ -499,6 +806,18 @@ function buildEbikeCard(b) {
     usedSection = `
       <div class="used-unavail">⚠️ No used listings<br>available right now</div>
       ${productUrl ? `<a class="ebike-option-btn new-btn" href="${productUrl}" target="_blank" rel="noopener" style="margin-top:6px">🛒 Buy New Instead</a>` : buyNewBtn}`;
+  } else if (isDirectLink(usedEbay)) {
+    // We have a direct itm/ link — open it directly, no live-lookup spinner
+    usedSection = `
+      <a class="ebike-option-btn used-btn" href="${usedEbay}"
+        target="_blank" rel="noopener">🏷️ View Cheapest Used ↗</a>
+      <div class="budget-chips">
+        <span class="budget-label">Max $</span>
+        ${[1000,2000,3000,5000].filter(p => p >= b.used_price_min * 0.8).map(p =>
+          `<button class="budget-chip" onclick="filterUsed(this,'${search.replace(/'/g,"\\'")}',${p})">$${p>=1000?(p/1000)+'k':p}</button>`
+        ).join('')}
+        <button class="budget-chip active" onclick="filterUsed(this,'${search.replace(/'/g,"\\'")}',0)">Any</button>
+      </div>`;
   } else {
     usedSection = `
       <a class="ebike-option-btn used-btn" href="${usedEbay}"
@@ -513,9 +832,11 @@ function buildEbikeCard(b) {
       </div>`;
   }
 
+  const imgQ = encodeURIComponent(b.title + ' electric bike');
   return `
   <div class="ebike-result-card">
     <div class="ebike-result-header">
+      <img class="ebike-card-img" src="/api/product-image?q=${imgQ}" alt="${esc(b.title)}" loading="lazy" onerror="this.style.display='none'"/>
       <div class="ebike-result-title">${esc(b.title)}</div>
       ${b.description ? `<div class="ebike-result-desc">${esc(b.description)}</div>` : ''}
     </div>
@@ -537,18 +858,47 @@ function buildEbikeCard(b) {
   </div>`;
 }
 
-async function searchEbikes() {
-  const q = $('ebike-search-input').value.trim() || 'cheap ebike';
+function searchEbikes() {
+  const token = getSubToken();
+  if (!token) {
+    // Not subscribed — save query, show paywall
+    _pendingSearchQuery = $('ebike-search-input').value.trim() || 'cheap ebike';
+    $('sub-name').value  = '';
+    $('sub-email').value = '';
+    $('sub-error').classList.add('hidden');
+    show('sub-paywall-modal');
+    return;
+  }
+  runEbikeSearch();
+}
+
+async function runEbikeSearch() {
+  const token = getSubToken();
+  if (!token) { show('sub-paywall-modal'); return; }
+
+  const q = _pendingSearchQuery || $('ebike-search-input').value.trim() || 'cheap ebike';
+  _pendingSearchQuery = null;
+
   $('ebike-modal-title').textContent = `🚲 "${q}" — New vs Used`;
   $('ebike-results').innerHTML = '';
   show('ebike-loading');
   show('ebike-modal');
 
   try {
-    const res = await fetch(`/api/ebikes/search?q=${encodeURIComponent(q)}`);
+    const res = await fetch(`/api/ebikes/search?q=${encodeURIComponent(q)}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
     const data = await res.json();
     const grid = $('ebike-results');
-    if (data.error || !data.length) {
+
+    if (data.error === 'subscription_required') {
+      // Token was invalid — clear it and show paywall
+      localStorage.removeItem(SUB_KEY);
+      hide('ebike-loading'); hide('ebike-modal');
+      show('sub-paywall-modal');
+      return;
+    }
+    if (!Array.isArray(data) || !data.length) {
       grid.innerHTML = `<p style="color:var(--muted);padding:20px 0">No results found. Try different keywords.</p>`;
     } else {
       grid.innerHTML = data.map(buildEbikeCard).join('');
@@ -560,38 +910,175 @@ async function searchEbikes() {
   }
 }
 
-/* ── AUTH / SIGN IN ──────────────────────────────────────── */
+/* ── USER ACCOUNT AUTH ───────────────────────────────────── */
 let currentUser = null;
 
 function loadUserFromStorage() {
   try { currentUser = JSON.parse(localStorage.getItem('emf_user') || 'null'); } catch {}
-  if (currentUser) $('btn-signin-header').textContent = `Hi, ${currentUser.name.split(' ')[0]}`;
+  updateHeaderForUser();
 }
 
-$('btn-signin-header').addEventListener('click', () => {
-  $('auth-title').textContent = 'Sign In';
-  show('auth-modal');
-});
+function updateHeaderForUser() {
+  if (currentUser) {
+    const firstName = (currentUser.name || currentUser.email || '').split(/[\s@]/)[0];
+    $('header-user-name').textContent = `Hi, ${firstName}`;
+    $('header-user-name').classList.remove('hidden');
+    $('btn-signin-header').classList.add('hidden');
+    $('btn-register-header').classList.add('hidden');
+    $('btn-signout-header').classList.remove('hidden');
+    // Link sub token to account if we have one
+    const token = getSubToken();
+    if (token && currentUser.email && !currentUser.subLinked) {
+      fetch('/api/user/link-sub', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ email: currentUser.email, subToken: token }),
+      }).then(() => {
+        currentUser.subLinked = true;
+        localStorage.setItem('emf_user', JSON.stringify(currentUser));
+      }).catch(() => {});
+    }
+  } else {
+    $('header-user-name').classList.add('hidden');
+    $('btn-signin-header').classList.remove('hidden');
+    $('btn-register-header').classList.remove('hidden');
+    $('btn-signout-header').classList.add('hidden');
+  }
+}
+
+function switchAuthTab(tab) {
+  ['signin','register'].forEach(t => {
+    $(`auth-tab-${t}`).classList.toggle('active', t === tab);
+    t === tab ? show(`auth-pane-${t}`) : hide(`auth-pane-${t}`);
+  });
+}
+
+$('btn-signin-header').addEventListener('click', () => { switchAuthTab('signin'); show('auth-modal'); });
+$('btn-register-header').addEventListener('click', () => { switchAuthTab('register'); show('auth-modal'); });
 $('btn-close-auth').addEventListener('click', () => hide('auth-modal'));
 $('auth-backdrop').addEventListener('click', () => hide('auth-modal'));
+$('auth-tab-signin').addEventListener('click', () => switchAuthTab('signin'));
+$('auth-tab-register').addEventListener('click', () => switchAuthTab('register'));
 
-$('terms-check').addEventListener('change', () => {
-  $('btn-auth-submit').disabled = !$('terms-check').checked ||
-    !$('auth-name').value.trim() || !$('auth-email').value.trim();
+$('btn-signout-header').addEventListener('click', () => {
+  currentUser = null;
+  localStorage.removeItem('emf_user');
+  updateHeaderForUser();
 });
-['auth-name','auth-email'].forEach(id => {
-  $(id).addEventListener('input', () => {
-    $('btn-auth-submit').disabled = !$('terms-check').checked ||
-      !$('auth-name').value.trim() || !$('auth-email').value.trim();
+
+// Sign In
+$('btn-signin-submit').addEventListener('click', async () => {
+  const email = $('signin-email').value.trim();
+  const password = $('signin-password').value;
+  const errEl = $('signin-error');
+  const btn = $('btn-signin-submit');
+  if (!email || !password) return;
+  errEl.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch('/api/user/login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      currentUser = { name: data.name || email, email, subLinked: !!data.subToken };
+      localStorage.setItem('emf_user', JSON.stringify(currentUser));
+      if (data.subToken) {
+        localStorage.setItem('emf_sub_token', data.subToken);
+      }
+      updateHeaderForUser();
+      hide('auth-modal');
+    } else {
+      errEl.textContent = data.error || 'Invalid email or password.';
+      errEl.classList.remove('hidden');
+    }
+  } catch { errEl.textContent = 'Connection error — try again.'; errEl.classList.remove('hidden'); }
+  btn.disabled = false; btn.textContent = 'Sign In →';
+});
+
+// Create Account
+$('btn-register-submit').addEventListener('click', async () => {
+  const name = $('register-name').value.trim();
+  const email = $('register-email').value.trim();
+  const password = $('register-password').value;
+  const errEl = $('register-error');
+  const btn = $('btn-register-submit');
+  if (!email || !password) return;
+  errEl.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Creating account…';
+  try {
+    const res = await fetch('/api/user/register', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, email, password, subToken: getSubToken() || undefined }),
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      currentUser = { name: name || email, email, subLinked: true };
+      localStorage.setItem('emf_user', JSON.stringify(currentUser));
+      updateHeaderForUser();
+      hide('auth-modal');
+    } else {
+      errEl.textContent = data.error || 'Could not create account.';
+      errEl.classList.remove('hidden');
+    }
+  } catch { errEl.textContent = 'Connection error — try again.'; errEl.classList.remove('hidden'); }
+  btn.disabled = false; btn.textContent = 'Create Account →';
+});
+
+// Enter key support
+['signin-email','signin-password'].forEach(id => $(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-signin-submit').click(); }));
+['register-name','register-email','register-password'].forEach(id => $(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-register-submit').click(); }));
+
+/* ── OWNER LOGIN (hidden — triple-click logo to access) ──── */
+document.querySelector('.logo').addEventListener('click', (() => {
+  let clicks = 0, t;
+  return () => {
+    clicks++;
+    clearTimeout(t);
+    t = setTimeout(() => { clicks = 0; }, 600);
+    if (clicks >= 3) { clicks = 0; $('owner-signin-section').classList.remove('hidden'); show('auth-modal'); switchAuthTab('signin'); }
+  };
+})());
+
+$('btn-owner-submit').addEventListener('click', async () => {
+  const username = $('owner-username').value.trim();
+  const password = $('owner-password').value;
+  const errEl    = $('owner-error');
+  const btn      = $('btn-owner-submit');
+  if (!username || !password) return;
+  errEl.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+  try {
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({username, password}),
+    });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      window.location.replace('/admin');
+    } else {
+      errEl.textContent = data.error || 'Invalid credentials';
+      errEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Sign In as Owner →';
+    }
+  } catch {
+    errEl.textContent = 'Connection error — try again';
+    errEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Sign In as Owner →';
+  }
+});
+
+// Allow Enter key in owner fields
+['owner-username','owner-password'].forEach(id => {
+  $(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('btn-owner-submit').click();
   });
-});
-
-$('btn-auth-submit').addEventListener('click', () => {
-  currentUser = {name: $('auth-name').value.trim(), email: $('auth-email').value.trim()};
-  localStorage.setItem('emf_user', JSON.stringify(currentUser));
-  $('btn-signin-header').textContent = `Hi, ${currentUser.name.split(' ')[0]}`;
-  hide('auth-modal');
-  if (pendingUnlockMod) { const m = pendingUnlockMod; pendingUnlockMod = null; doUnlock(m); }
 });
 
 /* ── TERMS ───────────────────────────────────────────────── */
@@ -659,6 +1146,8 @@ $('btn-scam-check').addEventListener('click', runScamCheck);
 $('scam-url-input').addEventListener('keydown', e => { if(e.key==='Enter') runScamCheck(); });
 
 async function runScamCheck() {
+  // PAYWALL DISABLED — re-enable when ready
+  // if (!getSubToken()) { showPaywall(); return; }
   const url = $('scam-url-input').value.trim();
   if (!url) return;
   show('scam-loading'); hide('scam-result');

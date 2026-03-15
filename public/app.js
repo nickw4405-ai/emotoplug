@@ -579,7 +579,8 @@ function buildShopLinks(mod, aq, eq) {
 }
 
 function openModModal(mod) {
-  if (!getSubToken()) { showPaywall(); return; }
+  // PAYWALL DISABLED — re-enable when ready
+  // if (!getSubToken()) { showPaywall(); return; }
   const savings = mod.savings || (mod.retail_price && mod.found_price ? mod.retail_price - mod.found_price : 0);
   const imgSrc = mod.image_url || `/api/product-image?q=${encodeURIComponent(mod.ebay_search||mod.title||'')}`;
   const aq = encodeURIComponent(mod.amazon_search || mod.title || '');
@@ -1145,7 +1146,8 @@ $('btn-scam-check').addEventListener('click', runScamCheck);
 $('scam-url-input').addEventListener('keydown', e => { if(e.key==='Enter') runScamCheck(); });
 
 async function runScamCheck() {
-  if (!getSubToken()) { showPaywall(); return; }
+  // PAYWALL DISABLED — re-enable when ready
+  // if (!getSubToken()) { showPaywall(); return; }
   const url = $('scam-url-input').value.trim();
   if (!url) return;
   show('scam-loading'); hide('scam-result');
