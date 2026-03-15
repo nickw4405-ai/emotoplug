@@ -784,7 +784,7 @@ const POPULAR_EBIKES = [
     official_url: 'https://sur-ronusa.com/sur-ron-light-bee/',
     product_url:  'https://sur-ronusa.com/sur-ron-light-bee/',
     ebay_search:  'Sur-Ron Light Bee X electric',
-    image_url: 'https://cdn11.bigcommerce.com/s-nlkkuaauhz/images/stencil/1280x1280/products/112/379/surron_rst_01__73314.1614119447.jpg?c=1',
+    image_url: 'https://cdn11.bigcommerce.com/s-nlkkuaauhz/product_images/uploaded_images/01.jpg',
   },
   {
     title: 'Talaria Sting',
@@ -820,7 +820,7 @@ const POPULAR_EBIKES = [
     official_url: 'https://www.radpowerbikes.com/products/radrover-plus-electric-fat-tire-bike',
     product_url:  'https://www.radpowerbikes.com/products/radrover-plus-electric-fat-tire-bike',
     ebay_search:  'Rad Power RadRover 6 Plus electric bike',
-    image_url: 'https://www.radpowerbikes.com/cdn/shop/files/PDPHeroImageTemplatecopy_23a3175e-2e4c-4496-83f3-7a3973f175fc.png?v=1763057034',
+    image_url: 'https://www.radpowerbikes.com/cdn/shop/files/RR6P_MY23_PN_R_01_1200x.jpg',
   },
   {
     title: 'KTM Freeride E-XC',
