@@ -5,7 +5,8 @@ let currentImage = null, finderMods = [], stream = null;
 let pendingUnlockMod = null, currentBike = null;
 
 /* ── DOM ── */
-const $ = id => document.getElementById(id);
+const _noop = { addEventListener:()=>{}, removeEventListener:()=>{}, classList:{add:()=>{},remove:()=>{},contains:()=>false,toggle:()=>{}}, style:{}, querySelectorAll:()=>[], querySelector:()=>null, scrollIntoView:()=>{}, get value(){return '';}, set value(v){}, get textContent(){return '';}, set textContent(v){}, get src(){return '';}, set src(v){}, get disabled(){return false;}, set disabled(v){}, get innerHTML(){return '';}, set innerHTML(v){}, get checked(){return false;}, set checked(v){} };
+const $ = id => document.getElementById(id) || _noop;
 const show = id => $(id)?.classList.remove('hidden');
 const hide = id => $(id)?.classList.add('hidden');
 const delay = ms => new Promise(r => setTimeout(r, ms));

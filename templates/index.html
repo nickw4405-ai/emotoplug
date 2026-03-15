@@ -179,6 +179,16 @@
       <h2 id="search-results-title">Results</h2>
       <button class="btn btn-outline btn-sm" id="btn-clear-search">✕ Clear</button>
     </div>
+    <div class="category-chips" id="search-cat-chips" style="margin-bottom:12px">
+      <button class="chip active" data-cat="all">All</button>
+      {% for cat in categories %}
+      <button class="chip" data-cat="{{cat}}">{{cat|capitalize}}</button>
+      {% endfor %}
+    </div>
+    <div id="search-unlock-banner" class="unlock-banner hidden">
+      <span>🔒 Click any product to unlock pricing &amp; buy links</span>
+      <button class="btn btn-primary btn-sm" onclick="showPaywall()">Get Access →</button>
+    </div>
     <div class="mods-grid" id="search-results-grid"></div>
   </section>
 
