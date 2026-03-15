@@ -218,8 +218,9 @@ async function doSearch(catFilter) {
   $('search-results-title').textContent = q ? `Results for "${q}" (${mods.length})` : `All Mods (${mods.length})`;
   grid.innerHTML = mods.map(buildModCard).join('');
   attachCardClicks(grid, mods);
-  const banner = $('search-unlock-banner');
-  if (banner) { getSubToken() ? banner.classList.add('hidden') : banner.classList.remove('hidden'); }
+  // PAYWALL DISABLED — banner hidden
+  // const banner = $('search-unlock-banner');
+  // if (banner) { getSubToken() ? banner.classList.add('hidden') : banner.classList.remove('hidden'); }
   show('search-results-section');
   if (!catFilter) $('search-results-section').scrollIntoView({behavior:'smooth'});
 }
@@ -486,9 +487,9 @@ function renderFinderMods(mods) {
   const grid = $('finder-mods-grid');
   grid.innerHTML = sorted.map(buildModCard).join('');
   attachCardClicks(grid, sorted);
-  // Show unlock banner if not subscribed
-  const banner = $('finder-unlock-banner');
-  if (banner) { getSubToken() ? banner.classList.add('hidden') : banner.classList.remove('hidden'); }
+  // PAYWALL DISABLED — banner hidden
+  // const banner = $('finder-unlock-banner');
+  // if (banner) { getSubToken() ? banner.classList.add('hidden') : banner.classList.remove('hidden'); }
 }
 
 $('finder-sort').addEventListener('change', () => renderFinderMods(finderMods));
@@ -859,23 +860,12 @@ function buildEbikeCard(b) {
 }
 
 function searchEbikes() {
-  const token = getSubToken();
-  if (!token) {
-    // Not subscribed — save query, show paywall
-    _pendingSearchQuery = $('ebike-search-input').value.trim() || 'cheap ebike';
-    $('sub-name').value  = '';
-    $('sub-email').value = '';
-    $('sub-error').classList.add('hidden');
-    show('sub-paywall-modal');
-    return;
-  }
+  // PAYWALL DISABLED — re-enable when ready
   runEbikeSearch();
 }
 
 async function runEbikeSearch() {
-  const token = getSubToken();
-  if (!token) { show('sub-paywall-modal'); return; }
-
+  // PAYWALL DISABLED — re-enable when ready
   const q = _pendingSearchQuery || $('ebike-search-input').value.trim() || 'cheap ebike';
   _pendingSearchQuery = null;
 
@@ -885,17 +875,12 @@ async function runEbikeSearch() {
   show('ebike-modal');
 
   try {
-    const res = await fetch(`/api/ebikes/search?q=${encodeURIComponent(q)}`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
+    const res = await fetch(`/api/ebikes/search?q=${encodeURIComponent(q)}`);
     const data = await res.json();
     const grid = $('ebike-results');
 
     if (data.error === 'subscription_required') {
-      // Token was invalid — clear it and show paywall
-      localStorage.removeItem(SUB_KEY);
       hide('ebike-loading'); hide('ebike-modal');
-      show('sub-paywall-modal');
       return;
     }
     if (!Array.isArray(data) || !data.length) {
