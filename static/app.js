@@ -541,42 +541,25 @@ function attachCardClicks(grid, mods) {
 
 /* ── MOD MODAL ───────────────────────────────────────────── */
 
-// Returns label + class for a direct shop link based on the URL
-function shopLabel(url) {
-  if (!url) return null;
-  if (url.includes('amazon.com')) {
-    // /dp/ = direct product page; /s? = search page
-    const isDirect = url.includes('/dp/');
-    return {label: isDirect ? '🛒 Amazon (Direct)' : '🛒 Amazon', cls: 'amazon'};
-  }
-  if (url.includes('ebay.com')) {
-    const isDirect = url.includes('/itm/');
-    return {label: isDirect ? '🏷️ eBay (Direct)' : '🏷️ eBay', cls: 'ebay'};
-  }
-  // Brand/retailer direct site
-  return {label: '🛍️ Shop Direct', cls: 'amazon'};
-}
-
-function buildShopLinks(mod, aq, eq) {
-  const hasDirect = mod.ebay_direct || mod.amazon_direct;
-  const savings = mod.savings || (mod.retail_price && mod.found_price ? mod.retail_price - mod.found_price : 0);
-  const unlockPrice = mod.unlock_price || 1;
-  const amzInfo = shopLabel(mod.amazon_direct);
-  const ebayInfo = shopLabel(mod.ebay_direct);
+function buildShopLinks(mod, aq) {
+  const amzSearch = `https://www.amazon.com/s?k=${aq}`;
+  const ebaySearch = `https://www.ebay.com/sch/i.html?_nkw=${aq}`;
+  const aliSearch = `https://www.aliexpress.com/wholesale?SearchText=${aq}`;
+  // direct = verified specific product page (not timotobolts, not aliexpress wholesale search)
+  const direct = mod.amazon_direct &&
+    !mod.amazon_direct.includes('timotobolts.com') &&
+    !mod.amazon_direct.includes('aliexpress.com/wholesale')
+    ? mod.amazon_direct : null;
+  const firstLabel = direct
+    ? (direct.includes('amazon.com') ? '✅ Amazon Direct' :
+       direct.includes('ebay.com') ? '✅ eBay Direct' :
+       direct.includes('aliexpress.com') ? '✅ AliExpress Direct' : '✅ Best Price')
+    : '🛒 Amazon';
+  const firstUrl = direct || amzSearch;
   return `
-    ${hasDirect && window.STRIPE_KEY ? `
-      <button class="shop-btn unlock-btn" onclick="handleUnlock(${JSON.stringify(JSON.stringify(mod))})">
-        🔒 Unlock Best Deal — $${unlockPrice.toFixed(2)} (Save $${savings})
-      </button>` : ''}
-    ${amzInfo
-      ? `<a class="shop-btn ${amzInfo.cls}" href="${mod.amazon_direct}" target="_blank" rel="noopener">${amzInfo.label}</a>`
-      : `<a class="shop-btn amazon" href="https://www.amazon.com/s?k=${aq}" target="_blank" rel="noopener">🛒 Amazon</a>`}
-    ${ebayInfo
-      ? `<a class="shop-btn ebay" href="${mod.ebay_direct}" target="_blank" rel="noopener">${ebayInfo.label}</a>`
-      : `<a class="shop-btn ebay" href="#"
-           onclick="openDirect(event,this,${JSON.stringify(mod.ebay_search||mod.title||'')},1000);return false"
-           target="_blank" rel="noopener">🏷️ Find Cheapest New ↗</a>`}
-    <a class="shop-btn google" href="https://www.google.com/search?tbm=shop&q=${aq}" target="_blank" rel="noopener">🔍 Compare Prices</a>
+    <a class="shop-btn amazon" href="${firstUrl}" target="_blank" rel="noopener">${firstLabel}</a>
+    <a class="shop-btn ebay" href="${ebaySearch}" target="_blank" rel="noopener">🏷️ eBay</a>
+    <a class="shop-btn google" href="${aliSearch}" target="_blank" rel="noopener">🛍️ AliExpress</a>
   `;
 }
 

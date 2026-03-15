@@ -73,7 +73,7 @@ a{color:var(--accent);text-decoration:none}
 header{position:relative;z-index:10;border-bottom:1px solid var(--border);padding:0 24px}
 .header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px}
 .logo{font-size:1.4rem;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
-.logo-icon{font-size:1.6rem;filter:drop-shadow(0 0 8px var(--accent))}
+.logo-text{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:3px;color:#ffffff;text-transform:uppercase}
 .accent{color:var(--accent)}
 
 /* ── Hero ── */
@@ -170,9 +170,12 @@ main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 8
 .ebike-search-bar{max-width:100%}
 /* ── EBIKE RESULT CARDS ── */
 .ebike-grid{display:flex;flex-direction:column;gap:12px;margin-top:4px}
+/* Popular grid on main page: 2-column */
+#popular-ebike-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px}
 .ebike-result-card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .2s}
 .ebike-result-card:hover{border-color:rgba(0,229,255,.2)}
-.ebike-result-header{padding:13px 16px 10px;border-bottom:1px solid var(--border)}
+.ebike-result-header{padding:13px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.ebike-card-img{width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;background:var(--surface);border:1px solid var(--border)}
 .ebike-result-title{font-size:.95rem;font-weight:700;color:var(--text)}
 .ebike-result-desc{font-size:.75rem;color:var(--muted);margin-top:3px}
 .ebike-options-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;padding:13px 16px;gap:0}
