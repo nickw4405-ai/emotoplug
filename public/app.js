@@ -781,9 +781,10 @@ const POPULAR_EBIKES = [
     title: 'Sur-Ron Light Bee X',
     description: 'The most popular electric dirt bike — lightweight, fast, tons of mods',
     new_price: '~$4,500', used_price_typical: '~$2,500–3,500', used_price_min: 2000,
-    official_url: 'https://sur-ronusa.com/products/sur-ron-light-bee-x',
-    product_url:  'https://sur-ronusa.com/products/sur-ron-light-bee-x',
+    official_url: 'https://sur-ronusa.com/sur-ron-light-bee/',
+    product_url:  'https://sur-ronusa.com/sur-ron-light-bee/',
     ebay_search:  'Sur-Ron Light Bee X electric',
+    image_url: 'https://cdn11.bigcommerce.com/s-nlkkuaauhz/images/stencil/1280x1280/products/112/379/surron_rst_01__73314.1614119447.jpg?c=1',
   },
   {
     title: 'Talaria Sting',
@@ -792,30 +793,34 @@ const POPULAR_EBIKES = [
     official_url: 'https://www.talaria.bike',
     product_url:  'https://www.talaria.bike',
     ebay_search:  'Talaria Sting electric dirt bike',
+    image_url: 'https://chainedandcharged.com/cdn/shop/files/BlueNewSize2_grande.jpg?v=1750309724',
   },
   {
     title: 'Segway X260',
     description: 'Off-road beast with long suspension travel — great stock performance',
     new_price: '~$4,000', used_price_typical: '~$2,500–3,500', used_price_min: 2000,
-    official_url: 'https://www.segway.com/x260',
-    product_url:  'https://www.segway.com/x260',
+    official_url: 'https://store.segway.com/segway-dirt-ebike-x260',
+    product_url:  'https://store.segway.com/segway-dirt-ebike-x260',
     ebay_search:  'Segway X260 electric dirt bike',
+    image_url: 'https://segway.imgix.net/catalog/product/cache/d3ec3723470ff918c92e447639eaf984/x/2/x260_blue_708x708.png',
   },
   {
     title: 'Super73 S2',
     description: 'Iconic retro moto style — great for street & light off-road',
     new_price: '~$2,995', used_price_typical: '~$1,500–2,200', used_price_min: 1200,
-    official_url: 'https://super73.com/products/super73-s2',
-    product_url:  'https://super73.com/products/super73-s2',
+    official_url: 'https://super73.com/products/super73-s2-se-legacy',
+    product_url:  'https://super73.com/products/super73-s2-se-legacy',
     ebay_search:  'Super73 S2 electric bike',
+    image_url: 'https://super73.com/cdn/shop/files/25YM_S2SESTREET_FRONTHERO_BLACKOUT.jpg?v=1772739162',
   },
   {
     title: 'Rad Power RadRover 6 Plus',
     description: 'Best-selling fat tire commuter — reliable, affordable, great range',
     new_price: '~$1,999', used_price_typical: '~$900–1,400', used_price_min: 700,
-    official_url: 'https://www.radpowerbikes.com/products/radrover-plus',
-    product_url:  'https://www.radpowerbikes.com/products/radrover-plus',
+    official_url: 'https://www.radpowerbikes.com/products/radrover-plus-electric-fat-tire-bike',
+    product_url:  'https://www.radpowerbikes.com/products/radrover-plus-electric-fat-tire-bike',
     ebay_search:  'Rad Power RadRover 6 Plus electric bike',
+    image_url: 'https://www.radpowerbikes.com/cdn/shop/files/PDPHeroImageTemplatecopy_23a3175e-2e4c-4496-83f3-7a3973f175fc.png?v=1763057034',
   },
   {
     title: 'KTM Freeride E-XC',
@@ -824,6 +829,7 @@ const POPULAR_EBIKES = [
     official_url: 'https://www.ktm.com/en-us/models/e-bikes/freeride-e-xc.html',
     product_url:  'https://www.ktm.com/en-us/models/e-bikes/freeride-e-xc.html',
     ebay_search:  'KTM Freeride E-XC electric',
+    image_url: 'https://azwecdnepstoragewebsiteuploads.azureedge.net/PHO_BIKE_90_RE_freeride-ex-c-21-90re_%23SALL_%23AEPI_%23V1.jpg',
   },
 ];
 
@@ -892,11 +898,11 @@ function buildEbikeCard(b) {
       </div>`;
   }
 
-  const imgQ = encodeURIComponent(b.title + ' electric bike');
+  const imgSrc = b.image_url || `/api/product-image?q=${encodeURIComponent(b.title + ' electric bike')}`;
   return `
   <div class="ebike-result-card">
     <div class="ebike-result-header">
-      <img class="ebike-card-img" src="/api/product-image?q=${imgQ}" alt="${esc(b.title)}" loading="lazy" onerror="this.style.display='none'"/>
+      <img class="ebike-card-img" src="${imgSrc}" alt="${esc(b.title)}" loading="lazy" onerror="this.style.display='none'"/>
       <div class="ebike-result-title">${esc(b.title)}</div>
       ${b.description ? `<div class="ebike-result-desc">${esc(b.description)}</div>` : ''}
     </div>
