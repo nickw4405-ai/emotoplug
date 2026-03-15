@@ -185,6 +185,12 @@ export default function Page() {
             <h2 id="search-results-title">Results</h2>
             <button className="btn btn-outline btn-sm" id="btn-clear-search">✕ Clear</button>
           </div>
+          <div className="category-chips" id="search-cat-chips" style={{marginBottom:'12px'}}>
+            <button className="chip active" data-cat="all">All</button>
+            {CATEGORIES.map(cat => (
+              <button key={cat} className="chip" data-cat={cat}>{cat.charAt(0).toUpperCase()+cat.slice(1)}</button>
+            ))}
+          </div>
           <div id="search-unlock-banner" className="unlock-banner hidden">
             <span>🔒 Click any product to unlock pricing &amp; buy links</span>
             <button className="btn btn-primary btn-sm" onClick="showPaywall()">Get Access →</button>

@@ -198,23 +198,43 @@ document.querySelectorAll('.trend-tag').forEach(btn =>
   btn.addEventListener('click', () => { $('search-input').value = btn.dataset.q; doSearch(); }));
 $('btn-clear-search').addEventListener('click', clearSearch);
 
-async function doSearch() {
+let lastSearchMods = [];
+
+async function doSearch(catFilter) {
   const q = $('search-input').value.trim();
-  const res = await fetch(`/api/mods/search?q=${encodeURIComponent(q)}`);
-  const mods = await res.json();
+  // Reset category chips to All when doing a fresh search (no catFilter arg)
+  if (!catFilter) {
+    document.querySelectorAll('#search-cat-chips .chip').forEach(c => c.classList.remove('active'));
+    const allChip = document.querySelector('#search-cat-chips .chip[data-cat="all"]');
+    if (allChip) allChip.classList.add('active');
+    const res = await fetch(`/api/mods/search?q=${encodeURIComponent(q)}`);
+    lastSearchMods = await res.json();
+  }
+  const mods = catFilter && catFilter !== 'all'
+    ? lastSearchMods.filter(m => m.category === catFilter)
+    : lastSearchMods;
   const grid = $('search-results-grid');
   $('search-results-title').textContent = q ? `Results for "${q}" (${mods.length})` : `All Mods (${mods.length})`;
   grid.innerHTML = mods.map(buildModCard).join('');
   attachCardClicks(grid, mods);
-  // Show unlock banner if not subscribed
   const banner = $('search-unlock-banner');
   if (banner) { getSubToken() ? banner.classList.add('hidden') : banner.classList.remove('hidden'); }
   show('search-results-section');
-  $('search-results-section').scrollIntoView({behavior:'smooth'});
+  if (!catFilter) $('search-results-section').scrollIntoView({behavior:'smooth'});
 }
+
+// Category chip filtering on search results
+document.addEventListener('click', e => {
+  const chip = e.target.closest('#search-cat-chips .chip');
+  if (!chip) return;
+  document.querySelectorAll('#search-cat-chips .chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  doSearch(chip.dataset.cat);
+});
 
 function clearSearch() {
   $('search-input').value = '';
+  lastSearchMods = [];
   hide('search-results-section');
 }
 
