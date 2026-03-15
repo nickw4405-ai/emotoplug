@@ -544,22 +544,18 @@ function attachCardClicks(grid, mods) {
 function buildShopLinks(mod, aq) {
   const amzSearch = `https://www.amazon.com/s?k=${aq}`;
   const ebaySearch = `https://www.ebay.com/sch/i.html?_nkw=${aq}`;
-  const aliSearch = `https://www.aliexpress.com/wholesale?SearchText=${aq}`;
-  // direct = verified specific product page (not timotobolts, not aliexpress wholesale search)
   const direct = mod.amazon_direct &&
     !mod.amazon_direct.includes('timotobolts.com') &&
     !mod.amazon_direct.includes('aliexpress.com/wholesale')
     ? mod.amazon_direct : null;
   const firstLabel = direct
     ? (direct.includes('amazon.com') ? '✅ Amazon Direct' :
-       direct.includes('ebay.com') ? '✅ eBay Direct' :
-       direct.includes('aliexpress.com') ? '✅ AliExpress Direct' : '✅ Best Price')
+       direct.includes('ebay.com') ? '✅ eBay Direct' : '✅ Best Price')
     : '🛒 Amazon';
   const firstUrl = direct || amzSearch;
   return `
     <a class="shop-btn amazon" href="${firstUrl}" target="_blank" rel="noopener">${firstLabel}</a>
     <a class="shop-btn ebay" href="${ebaySearch}" target="_blank" rel="noopener">🏷️ eBay</a>
-    <a class="shop-btn google" href="${aliSearch}" target="_blank" rel="noopener">🛍️ AliExpress</a>
   `;
 }
 
