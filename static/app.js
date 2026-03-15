@@ -189,6 +189,7 @@ window.addEventListener('load', () => {
   if (subSid) { history.replaceState({}, '', '/'); verifySubscription(subSid, subEmail); }
 
   initTrendingCards();
+  initPopularEbikes();
   loadUserFromStorage();
 });
 
@@ -772,6 +773,64 @@ async function filterUsed(btn, search, maxPrice) {
 
 function isDirectLink(url) {
   return url && url.includes('/itm/');
+}
+
+/* ── POPULAR EBIKES ──────────────────────────────────────── */
+const POPULAR_EBIKES = [
+  {
+    title: 'Sur-Ron Light Bee X',
+    description: 'The most popular electric dirt bike — lightweight, fast, tons of mods',
+    new_price: '~$4,500', used_price_typical: '~$2,500–3,500', used_price_min: 2000,
+    official_url: 'https://sur-ronusa.com/products/sur-ron-light-bee-x',
+    product_url:  'https://sur-ronusa.com/products/sur-ron-light-bee-x',
+    ebay_search:  'Sur-Ron Light Bee X electric',
+  },
+  {
+    title: 'Talaria Sting',
+    description: 'Smooth power, great for trail riding — strong community & mod scene',
+    new_price: '~$3,800', used_price_typical: '~$2,200–3,000', used_price_min: 1800,
+    official_url: 'https://www.talaria.bike',
+    product_url:  'https://www.talaria.bike',
+    ebay_search:  'Talaria Sting electric dirt bike',
+  },
+  {
+    title: 'Segway X260',
+    description: 'Off-road beast with long suspension travel — great stock performance',
+    new_price: '~$4,000', used_price_typical: '~$2,500–3,500', used_price_min: 2000,
+    official_url: 'https://www.segway.com/x260',
+    product_url:  'https://www.segway.com/x260',
+    ebay_search:  'Segway X260 electric dirt bike',
+  },
+  {
+    title: 'Super73 S2',
+    description: 'Iconic retro moto style — great for street & light off-road',
+    new_price: '~$2,995', used_price_typical: '~$1,500–2,200', used_price_min: 1200,
+    official_url: 'https://super73.com/products/super73-s2',
+    product_url:  'https://super73.com/products/super73-s2',
+    ebay_search:  'Super73 S2 electric bike',
+  },
+  {
+    title: 'Rad Power RadRover 6 Plus',
+    description: 'Best-selling fat tire commuter — reliable, affordable, great range',
+    new_price: '~$1,999', used_price_typical: '~$900–1,400', used_price_min: 700,
+    official_url: 'https://www.radpowerbikes.com/products/radrover-plus',
+    product_url:  'https://www.radpowerbikes.com/products/radrover-plus',
+    ebay_search:  'Rad Power RadRover 6 Plus electric bike',
+  },
+  {
+    title: 'KTM Freeride E-XC',
+    description: 'Premium Austrian enduro bike — top-tier performance for serious riders',
+    new_price: '~$11,499', used_price_typical: '~$5,000–8,000', used_price_min: 4000,
+    official_url: 'https://www.ktm.com/en-us/models/e-bikes/freeride-e-xc.html',
+    product_url:  'https://www.ktm.com/en-us/models/e-bikes/freeride-e-xc.html',
+    ebay_search:  'KTM Freeride E-XC electric',
+  },
+];
+
+function initPopularEbikes() {
+  const grid = $('popular-ebike-grid');
+  if (!grid || grid === _noop) return;
+  grid.innerHTML = POPULAR_EBIKES.map(buildEbikeCard).join('');
 }
 
 function buildEbikeCard(b) {

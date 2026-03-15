@@ -252,30 +252,16 @@ export default function Page() {
           <div id="scam-result" className="hidden"></div>
         </section>
 
-        {/* ── CHEAP EBIKES SHOP ── */}
+        {/* ── EBIKE SHOP ── */}
         <section className="card" id="cheap-ebikes-section">
-          <h2>🚲 Shop Quality Ebikes for Less</h2>
-          <p className="section-sub">Find top-rated complete ebikes at great prices — new &amp; used, best prices on eBay</p>
-          <div className="search-bar ebike-search-bar">
-            <span className="search-icon">🚲</span>
-            <input id="ebike-search-input" type="text" placeholder="Search ebikes… fat tire, commuter, Sur-Ron, under $1000…" autoComplete="off" />
-            <button className="btn btn-primary" id="btn-ebike-search">Find Deals</button>
+          <h2>🚲 Find Your Ebike for Less</h2>
+          <div className="search-bar ebike-search-bar" style={{marginBottom:'24px'}}>
+            <span className="search-icon">🔍</span>
+            <input id="ebike-search-input" type="text" placeholder="Search any ebike… Sur-Ron, fat tire, under $1000…" autoComplete="off" />
+            <button className="btn btn-primary" id="btn-ebike-search">Search</button>
           </div>
-          <div className="trending-tags" style={{marginTop:'14px'}}>
-            <span className="tag-label">🔥 Popular:</span>
-            {[
-              {label:'⚡ Sur-Ron', q:'Sur-Ron Light Bee X'},
-              {label:'🏍️ Talaria Sting', q:'Talaria Sting'},
-              {label:'🏔️ Segway X260', q:'Segway X260'},
-              {label:'🛞 Fat Tire', q:'fat tire ebike'},
-              {label:'🏙️ Commuter', q:'commuter ebike under $1500'},
-              {label:'📦 Folding', q:'folding ebike'},
-              {label:'💰 Under $1k', q:'ebike under $1000'},
-              {label:'🏍️ Electric Dirt', q:'electric dirt bike off-road'},
-            ].map(({label, q}) => (
-              <button key={q} className="trend-tag ebike-trend-tag" data-q={q}>{label}</button>
-            ))}
-          </div>
+          <p className="section-sub" style={{marginBottom:'16px'}}>⚡ Popular bikes — cheapest new, used &amp; official site:</p>
+          <div id="popular-ebike-grid" className="ebike-grid"></div>
         </section>
 
         {/* ── SUBSCRIPTION PAYWALL MODAL ── */}
