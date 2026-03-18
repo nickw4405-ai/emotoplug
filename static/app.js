@@ -480,13 +480,28 @@ async function searchModsForBike(query) {
 
 function $ebike_meta(v) { return v && v !== 'Unknown' ? v : null; }
 
+function isCompatibleWithBike(mod, bike) {
+  if (!bike || !mod.compatibility) return true;
+  const c = mod.compatibility.toLowerCase();
+  if (c.includes('universal') || c.includes('most electric')) return true;
+  const brand = (bike.brand || '').toLowerCase();
+  const model = (bike.model || '').toLowerCase();
+  if (brand && c.includes(brand)) return true;
+  if (model) {
+    const words = model.split(/[\s\-\/]+/).filter(w => w.length > 2);
+    for (const w of words) { if (c.includes(w)) return true; }
+  }
+  return false;
+}
+
 function renderFinderMods(mods) {
   const sort = $('finder-sort').value;
-  const sorted = [...mods];
+  const compatible = currentBike ? mods.filter(m => isCompatibleWithBike(m, currentBike)) : mods;
+  const sorted = [...compatible];
   if (sort === 'savings') sorted.sort((a,b)=>(b.savings||0)-(a.savings||0));
   else if (sort === 'price-low') sorted.sort((a,b)=>(a.found_price||0)-(b.found_price||0));
   const grid = $('finder-mods-grid');
-  grid.innerHTML = sorted.map(buildModCard).join('');
+  grid.innerHTML = sorted.length ? sorted.map(buildModCard).join('') : '<p style="color:var(--muted);text-align:center;padding:24px">No compatible mods found for this bike yet.</p>';
   attachCardClicks(grid, sorted);
   // PAYWALL DISABLED — banner hidden
   // const banner = $('finder-unlock-banner');
@@ -544,15 +559,11 @@ function attachCardClicks(grid, mods) {
 function buildShopLinks(mod, aq) {
   const amzSearch = `https://www.amazon.com/s?k=${aq}`;
   const ebaySearch = `https://www.ebay.com/sch/i.html?_nkw=${aq}`;
-  const direct = mod.amazon_direct &&
-    !mod.amazon_direct.includes('timotobolts.com') &&
-    !mod.amazon_direct.includes('aliexpress.com/wholesale')
-    ? mod.amazon_direct : null;
-  const firstLabel = direct
-    ? (direct.includes('amazon.com') ? '✅ Amazon Direct' :
-       direct.includes('ebay.com') ? '✅ eBay Direct' : '✅ Best Price')
-    : '🛒 Amazon';
-  const firstUrl = direct || amzSearch;
+  const isAmazon = mod.amazon_direct && mod.amazon_direct.includes('amazon.com');
+  const isEbay = mod.amazon_direct && mod.amazon_direct.includes('ebay.com');
+  const isDirect = mod.amazon_direct && (isAmazon || isEbay || (!mod.amazon_direct.includes('/s?') && !mod.amazon_direct.includes('/sch/')));
+  const firstLabel = isAmazon ? '✅ Amazon Direct' : isEbay ? '✅ eBay Direct' : isDirect ? '✅ Buy Direct' : '🛒 Amazon';
+  const firstUrl = isDirect ? mod.amazon_direct : amzSearch;
   return `
     <a class="shop-btn amazon" href="${firstUrl}" target="_blank" rel="noopener">${firstLabel}</a>
     <a class="shop-btn ebay" href="${ebaySearch}" target="_blank" rel="noopener">🏷️ eBay</a>
@@ -763,6 +774,8 @@ const POPULAR_EBIKES = [
     official_url: 'https://sur-ronusa.com/sur-ron-light-bee/',
     product_url:  'https://sur-ronusa.com/sur-ron-light-bee/',
     ebay_search:  'Sur-Ron Light Bee X electric',
+    ebay_new_url: 'https://www.ebay.com/itm/326371239155',
+    ebay_url:     'https://www.ebay.com/itm/315287961821',
     image_url: 'https://cdn11.bigcommerce.com/s-nlkkuaauhz/product_images/uploaded_images/homepage-surron-01.png',
   },
   {
@@ -772,6 +785,8 @@ const POPULAR_EBIKES = [
     official_url: 'https://www.talaria.bike',
     product_url:  'https://www.talaria.bike',
     ebay_search:  'Talaria Sting electric dirt bike',
+    ebay_new_url: 'https://www.ebay.com/itm/235600717697',
+    ebay_url:     'https://www.ebay.com/itm/196201633756',
     image_url: 'https://chainedandcharged.com/cdn/shop/files/BlueNewSize2_grande.jpg?v=1750309724',
   },
   {
@@ -781,6 +796,8 @@ const POPULAR_EBIKES = [
     official_url: 'https://store.segway.com/segway-dirt-ebike-x260',
     product_url:  'https://store.segway.com/segway-dirt-ebike-x260',
     ebay_search:  'Segway X260 electric dirt bike',
+    ebay_new_url: 'https://www.ebay.com/itm/187520481219',
+    ebay_url:     'https://www.ebay.com/itm/125758674063',
     image_url: 'https://segway.imgix.net/catalog/product/cache/d3ec3723470ff918c92e447639eaf984/x/2/x260_blue_708x708.png',
   },
   {
@@ -790,6 +807,8 @@ const POPULAR_EBIKES = [
     official_url: 'https://super73.com/products/super73-s2-se-legacy',
     product_url:  'https://super73.com/products/super73-s2-se-legacy',
     ebay_search:  'Super73 S2 electric bike',
+    ebay_new_url: 'https://www.ebay.com/itm/295245627954',
+    ebay_url:     'https://www.ebay.com/itm/227058088146',
     image_url: 'https://super73.com/cdn/shop/files/25YM_S2SESTREET_FRONTHERO_BLACKOUT.jpg?v=1772739162',
   },
   {
@@ -799,6 +818,8 @@ const POPULAR_EBIKES = [
     official_url: 'https://www.aventon.com/products/pace-500-ebike',
     product_url:  'https://www.aventon.com/products/pace-500-ebike',
     ebay_search:  'Aventon Pace 500 electric bike',
+    ebay_new_url: 'https://www.ebay.com/itm/374412865069',
+    ebay_url:     'https://www.ebay.com/itm/304159309897',
     image_url: 'https://www.aventon.com/cdn/shop/files/01_PACE_Ghost-White_side-_1_a00ea7f8-ed65-49c6-a0be-c041f96b648b.jpg?v=1755057571',
   },
   {
@@ -816,6 +837,76 @@ function initPopularEbikes() {
   const grid = $('popular-ebike-grid');
   if (!grid || grid === _noop) return;
   grid.innerHTML = POPULAR_EBIKES.map(buildEbikeCard).join('');
+  // Background-check all direct itm/ links — swap if sold, hide if nothing found
+  POPULAR_EBIKES.forEach((b, i) => checkEbikeLinks(b, i));
+}
+
+function _itemId(url) {
+  if (!url || !url.includes('/itm/')) return null;
+  return url.split('/itm/')[1].split('?')[0].replace(/\D/g, '');
+}
+
+async function checkEbikeLinks(bike, idx) {
+  const search = bike.ebay_search || bike.title;
+  const cards  = () => document.querySelectorAll('.ebike-result-card');
+
+  async function checkOne(url, condition) {
+    const id = _itemId(url);
+    if (!id) return null;
+    const cacheKey = `ec-${id}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) return JSON.parse(cached);
+    } catch { /* Safari private mode blocks sessionStorage */ }
+    try {
+      const r = await fetch(`/api/ebikes/check-listing?item_id=${id}&search=${encodeURIComponent(search)}&condition=${condition}`);
+      const data = await r.json();
+      try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch { /* private mode */ }
+      return data;
+    } catch { return null; }
+  }
+
+  // Check new link
+  if (isDirectLink(bike.ebay_new_url)) {
+    const data = await checkOne(bike.ebay_new_url, 'new');
+    if (data && !data.available) {
+      const card = cards()[idx];
+      const btn  = card && card.querySelector('.cheap-btn');
+      if (btn) {
+        if (data.url) {
+          btn.href = data.url;
+          btn.textContent = '💸 Find Cheapest New ↗';
+          btn.onclick = null;
+        } else {
+          btn.textContent = '❌ Not Available';
+          btn.removeAttribute('href');
+          btn.style.opacity = '0.5';
+          btn.style.pointerEvents = 'none';
+        }
+      }
+    }
+  }
+
+  // Check used link
+  if (isDirectLink(bike.ebay_url)) {
+    const data = await checkOne(bike.ebay_url, 'used');
+    if (data && !data.available) {
+      const card = cards()[idx];
+      const btn  = card && card.querySelector('.used-btn');
+      if (btn) {
+        if (data.url) {
+          btn.href = data.url;
+          btn.textContent = '🏷️ Find Cheapest Used ↗';
+          btn.onclick = null;
+        } else {
+          btn.textContent = '❌ Not Available';
+          btn.removeAttribute('href');
+          btn.style.opacity = '0.5';
+          btn.style.pointerEvents = 'none';
+        }
+      }
+    }
+  }
 }
 
 function buildEbikeCard(b) {
