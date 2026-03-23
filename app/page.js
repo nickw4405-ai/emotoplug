@@ -264,6 +264,18 @@ export default function Page() {
           <div id="popular-ebike-grid" className="ebike-grid"></div>
         </section>
 
+        {/* ── REQUEST A MOD ── */}
+        <section className="card" id="request-section">
+          <h2>🙋 Request a Mod</h2>
+          <p className="section-sub">Don&apos;t see what you&apos;re looking for? Tell us — we source what the community asks for.</p>
+          <div className="request-row">
+            <input id="request-mod-input" type="text" placeholder="What mod do you want? e.g. Rear shock upgrade, LED bar ends…" autoComplete="off" />
+            <input id="request-bike-input" type="text" placeholder="Your bike (optional) e.g. Sur-Ron Light Bee X" autoComplete="off" />
+            <button className="btn btn-primary" id="btn-request-mod">Submit Request</button>
+          </div>
+          <div id="request-success" className="request-success hidden">✅ Request submitted! We&apos;ll source it if enough people want it.</div>
+        </section>
+
         {/* ── SUBSCRIPTION PAYWALL MODAL ── */}
         <div id="sub-paywall-modal" className="modal hidden">
           <div className="modal-backdrop" id="sub-paywall-backdrop"></div>

@@ -448,6 +448,48 @@ def api_ebike_search():
     return jsonify(results)
 
 
+@app.route("/api/ebikes/check-listing")
+def api_check_listing():
+    """Check if an eBay itm/ listing is still active. If sold/ended, return a search fallback."""
+    item_id   = re.sub(r'\D', '', request.args.get('item_id', ''))
+    search    = request.args.get('search', '')
+    condition = '1000' if request.args.get('condition') == 'new' else '3000'
+
+    if not item_id:
+        return jsonify({'available': False, 'url': None})
+
+    def fallback():
+        url = (f"https://www.ebay.com/sch/i.html?_nkw={quote(search)}&LH_BIN=1&_sop=15&LH_ItemCondition={condition}"
+               if search else None)
+        return jsonify({'available': False, 'url': url})
+
+    try:
+        resp = cf_requests.get(
+            f"https://www.ebay.com/itm/{item_id}",
+            impersonate="chrome124",
+            timeout=8,
+        )
+        if '/itm/' not in resp.url:
+            return fallback()
+        if resp.status_code == 404:
+            return fallback()
+        html = resp.text
+    except Exception:
+        return jsonify({'available': True, 'url': f'https://www.ebay.com/itm/{item_id}'})
+
+    ended = (
+        'This listing has ended' in html or
+        'listing-ended' in html or
+        'item-ended' in html or
+        '"ended":true' in html or
+        'item not found' in html.lower()
+    )
+    if ended:
+        return fallback()
+
+    return jsonify({'available': True, 'url': f'https://www.ebay.com/itm/{item_id}'})
+
+
 @app.route("/goto/ebay/url")
 def goto_ebay_url():
     """Return JSON {url: direct_itm_url_or_fallback} — used by filterUsed() JS."""
@@ -756,6 +798,25 @@ def verify_unlock():
         return jsonify({"error":"Not paid"}), 400
     except Exception as e:
         return jsonify({"error":str(e)}), 500
+
+@app.route("/api/mods/request", methods=["POST"])
+def api_mod_request():
+    from datetime import datetime
+    data = request.get_json(force=True) or {}
+    mod_req = data.get("mod", "").strip()
+    bike    = data.get("bike", "").strip()
+    if not mod_req:
+        return jsonify({"error": "No mod specified"}), 400
+    requests_file = os.path.join(os.path.dirname(__file__), "mod_requests.json")
+    try:
+        with open(requests_file) as f:
+            requests_list = json.load(f)
+    except Exception:
+        requests_list = []
+    requests_list.append({"mod": mod_req, "bike": bike, "timestamp": datetime.now().isoformat()})
+    with open(requests_file, "w") as f:
+        json.dump(requests_list, f, indent=2)
+    return jsonify({"ok": True})
 
 if __name__ == "__main__":
     app.run(debug=True, port=int(os.getenv("PORT",5001)))

@@ -567,9 +567,12 @@ function buildShopLinks(mod, aq) {
   const isDirect = mod.amazon_direct && (isAmazon || isEbay || (!mod.amazon_direct.includes('/s?') && !mod.amazon_direct.includes('/sch/')));
   const firstLabel = isAmazon ? '✅ Amazon Direct' : isEbay ? '✅ eBay Direct' : isDirect ? '✅ Buy Direct' : '🛒 Amazon';
   const firstUrl = isDirect ? mod.amazon_direct : amzSearch;
+  const ytQ = encodeURIComponent((mod.youtube_search || mod.title || '') + ' install tutorial');
+  const ytUrl = mod.tutorial_url || `https://www.youtube.com/results?search_query=${ytQ}`;
   return `
     <a class="shop-btn amazon" href="${firstUrl}" target="_blank" rel="noopener">${firstLabel}</a>
     <a class="shop-btn ebay" href="${ebaySearch}" target="_blank" rel="noopener">🏷️ eBay</a>
+    <a class="shop-btn youtube" href="${ytUrl}" target="_blank" rel="noopener">📺 Install Guide</a>
   `;
 }
 
@@ -1311,6 +1314,28 @@ async function runScamCheck() {
     show('scam-result');
   }
 }
+
+/* ── MOD REQUEST ─────────────────────────────────────────── */
+$('btn-request-mod')?.addEventListener('click', async () => {
+  const modVal = $('request-mod-input')?.value.trim();
+  if (!modVal) return;
+  const btn = $('btn-request-mod');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '⏳ Submitting…';
+  btn.disabled = true;
+  try {
+    await fetch('/api/mods/request', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ mod: modVal, bike: $('request-bike-input')?.value.trim() || '' }),
+    });
+    $('request-mod-input').value = '';
+    $('request-bike-input').value = '';
+    const success = $('request-success');
+    if (success) { success.classList.remove('hidden'); setTimeout(() => success.classList.add('hidden'), 4000); }
+  } catch { /* silent */ }
+  finally { btn.innerHTML = orig; btn.disabled = false; }
+});
 
 /* ── HELPERS ─────────────────────────────────────────────── */
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
