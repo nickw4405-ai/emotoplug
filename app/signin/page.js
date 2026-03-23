@@ -1,9 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function SignInPage() {
-  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
@@ -21,7 +19,7 @@ export default function SignInPage() {
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        router.push('/admin');
+        window.location.href = '/admin';
       } else {
         setError(data.error || 'Invalid credentials');
       }
