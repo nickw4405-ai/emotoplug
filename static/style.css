@@ -90,7 +90,6 @@ header{position:relative;z-index:10;border-bottom:1px solid var(--border);paddin
 .header-auth{display:flex;align-items:center;gap:8px}
 .header-user-name{color:var(--text);font-size:0.9rem;font-weight:600}
 .btn-ghost{background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.85rem;padding:6px 10px;border-radius:8px;transition:color 0.2s}
-.btn-ghost:hover{color:var(--text)}
 .logo{display:flex;align-items:center}
 .logo-text{
   font-family:'Bebas Neue',sans-serif;
@@ -114,7 +113,6 @@ header{position:relative;z-index:10;border-bottom:1px solid var(--border);paddin
 .trending-tags{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px}
 .tag-label{color:var(--muted);font-size:.8rem}
 .trend-tag{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:.78rem;padding:5px 12px;border-radius:99px;cursor:pointer;transition:all .15s}
-.trend-tag:hover{border-color:var(--accent);color:var(--accent)}
 
 /* ── Main ── */
 main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 80px;display:flex;flex-direction:column;gap:40px}
@@ -127,7 +125,6 @@ main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 8
 /* ── Category chips ── */
 .category-chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:.75rem;padding:5px 12px;border-radius:99px;cursor:pointer;transition:all .15s;white-space:nowrap}
-.chip:hover{border-color:var(--accent);color:var(--accent)}
 .chip.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700}
 
 /* ── Mods grid ── */
@@ -143,7 +140,6 @@ main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 8
 /* ── Query chips ── */
 .query-chips{display:flex;flex-wrap:wrap;gap:8px}
 .query-chip{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:.82rem;padding:9px 18px;border-radius:99px;cursor:pointer;transition:all .15s;white-space:nowrap}
-.query-chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.06)}
 .query-chip.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700}
 .mod-card-body{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
 .mod-cat-tag{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--accent)}
@@ -196,7 +192,6 @@ main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 8
 /* Popular grid on main page: 2-column */
 #popular-ebike-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px}
 .ebike-result-card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .2s}
-.ebike-result-card:hover{border-color:rgba(0,229,255,.2)}
 .ebike-result-header{padding:13px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
 .ebike-card-img{width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;background:var(--surface);border:1px solid var(--border)}
 .ebike-result-title{font-size:.95rem;font-weight:700;color:var(--text)}
@@ -208,18 +203,13 @@ main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 8
 .option-price{font-size:.95rem;font-weight:800;color:var(--green);min-height:1.4em}
 .ebike-option-btn{display:inline-flex;align-items:center;padding:7px 12px;border-radius:8px;font-size:.76rem;font-weight:700;text-decoration:none;transition:all .15s;border:none;cursor:pointer;width:fit-content}
 .new-btn{background:rgba(0,229,255,.1);color:var(--accent);border:1px solid rgba(0,229,255,.2)}
-.new-btn:hover{background:rgba(0,229,255,.2);border-color:rgba(0,229,255,.45)}
 .used-btn{background:rgba(124,58,237,.12);color:#a78bfa;border:1px solid rgba(124,58,237,.25)}
-.used-btn:hover{background:rgba(124,58,237,.25);border-color:rgba(124,58,237,.5)}
 .official-btn{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.25)}
-.official-btn:hover{background:rgba(34,197,94,.22);border-color:rgba(34,197,94,.5)}
 .cheap-btn{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.25)}
-.cheap-btn:hover{background:rgba(251,191,36,.22);border-color:rgba(251,191,36,.5)}
 .used-unavail{font-size:.74rem;color:var(--muted);line-height:1.5;padding:2px 0}
 .budget-chips{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:1px}
 .budget-label{font-size:.63rem;color:var(--muted);font-weight:600;white-space:nowrap}
 .budget-chip{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-size:.67rem;font-weight:600;padding:3px 8px;border-radius:20px;cursor:pointer;transition:all .15s}
-.budget-chip:hover{border-color:rgba(124,58,237,.4);color:#a78bfa}
 .budget-chip.active{background:rgba(124,58,237,.18);border-color:rgba(124,58,237,.45);color:#a78bfa}
 
 /* ── Loading ── */
@@ -243,14 +233,10 @@ main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 8
 .detail-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:700}
 .shop-links{display:flex;flex-wrap:wrap;gap:8px}
 .shop-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:.78rem;font-weight:600;text-decoration:none;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s}
-.shop-btn:hover{border-color:var(--accent);color:var(--accent)}
 .shop-btn.amazon{border-color:rgba(255,153,0,.3);color:#ff9900}
-.shop-btn.amazon:hover{background:rgba(255,153,0,.08)}
 .shop-btn.ebay{border-color:rgba(0,111,255,.3);color:#006fdf}
-.shop-btn.ebay:hover{background:rgba(0,111,255,.08)}
 .shop-btn.google{border-color:rgba(52,168,83,.3);color:#34a853}
 .shop-btn.unlock-btn{background:linear-gradient(135deg,var(--accent2),#9333ea);color:#fff;border:none}
-.shop-btn.unlock-btn:hover{filter:brightness(1.15)}
 .unlock-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(124,92,252,.1);border:1px solid rgba(124,92,252,.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;flex-wrap:wrap}
 .unlock-banner span{color:var(--text);font-size:.9rem;font-weight:500}
 .modal-savings-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -271,15 +257,11 @@ main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 8
 .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;border:none;transition:all .18s;text-decoration:none;white-space:nowrap;touch-action:manipulation}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn-primary{background:linear-gradient(135deg,var(--accent),#0ea5e9);color:#000}
-.btn-primary:hover:not(:disabled){filter:brightness(1.05)}
 .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
 .btn-outline{background:transparent;color:var(--muted);border:1px solid var(--border)}
-.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
 .btn-sm{padding:6px 14px;font-size:.8rem;border-radius:8px}
 .btn-large{padding:13px 28px;font-size:1rem;border-radius:12px}
 .btn-close{background:var(--surface2);border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.btn-close:hover{color:var(--text);border-color:var(--accent)}
 
 /* ── Modals ── */
 .modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -422,7 +404,6 @@ footer a{color:var(--muted)}footer a:hover{color:var(--accent)}
 /* ── Owner Sign-In Section ── */
 .owner-signin-divider{text-align:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
 .owner-signin-toggle{background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color 0.2s}
-.owner-signin-toggle:hover{color:var(--text)}
 .owner-signin-section{display:flex;flex-direction:column;gap:10px;margin-top:12px}
 .owner-signin-section input{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:1rem;outline:none;width:100%}
 .owner-signin-section input:focus{border-color:var(--accent)}
@@ -431,13 +412,45 @@ footer a{color:var(--muted)}footer a:hover{color:var(--accent)}
 /* ── Hover-only effects (desktop/mouse) — prevents iOS Safari double-tap ── */
 /* On touch devices @media(hover:hover) is false so NO :hover styles fire at all */
 @media(hover:hover){
+  /* Cards */
   .mod-card:hover{border-color:rgba(0,229,255,.3);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.6)}
   .mod-img{transition:transform .4s ease}
   .mod-card:hover .mod-img{transform:scale(1.08)}
+  .ebike-result-card:hover{border-color:rgba(0,229,255,.2)}
+  /* Buttons */
   .btn-primary:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px)}
+  .btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-close:hover{color:var(--text);border-color:var(--accent)}
+  .btn-ghost:hover{color:var(--text)}
+  /* Chips & tags */
+  .trend-tag:hover{border-color:var(--accent);color:var(--accent)}
+  .chip:hover{border-color:var(--accent);color:var(--accent)}
+  .query-chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,229,255,.06)}
+  .budget-chip:hover{border-color:rgba(124,58,237,.4);color:#a78bfa}
+  /* Shop buttons */
+  .shop-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .shop-btn.amazon:hover{background:rgba(255,153,0,.08)}
+  .shop-btn.ebay:hover{background:rgba(0,111,255,.08)}
+  .shop-btn.unlock-btn:hover{filter:brightness(1.15)}
+  /* Ebike buttons */
+  .new-btn:hover{background:rgba(0,229,255,.2);border-color:rgba(0,229,255,.45)}
+  .used-btn:hover{background:rgba(124,58,237,.25);border-color:rgba(124,58,237,.5)}
+  .official-btn:hover{background:rgba(34,197,94,.22);border-color:rgba(34,197,94,.5)}
+  .cheap-btn:hover{background:rgba(251,191,36,.22);border-color:rgba(251,191,36,.5)}
+  /* Misc */
+  .owner-signin-toggle:hover{color:var(--text)}
 }
-/* Touch active states — instant visual feedback on tap */
+/* Touch active states — instant visual feedback on tap (no hover device) */
 @media(hover:none){
   .mod-card:active{border-color:rgba(0,229,255,.4);background:var(--surface2)}
   .btn-primary:active:not(:disabled){filter:brightness(0.9)}
+  .btn-secondary:active{border-color:var(--accent);color:var(--accent)}
+  .btn-outline:active{border-color:var(--accent);color:var(--accent)}
+  .trend-tag:active{border-color:var(--accent);color:var(--accent)}
+  .chip:active{background:rgba(0,229,255,.08);border-color:var(--accent);color:var(--accent)}
+  .query-chip:active{border-color:var(--accent);color:var(--accent)}
+  .shop-btn:active{border-color:var(--accent);color:var(--accent)}
+  .new-btn:active{background:rgba(0,229,255,.2);border-color:rgba(0,229,255,.45)}
+  .used-btn:active{background:rgba(124,58,237,.25);border-color:rgba(124,58,237,.5)}
 }
