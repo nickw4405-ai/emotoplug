@@ -246,6 +246,7 @@ function initTrendingCards() {
   const grid = $('trending-grid');
   grid.querySelectorAll('.mod-card.preloaded').forEach(card => {
     const mod = JSON.parse(card.dataset.mod);
+    card.addEventListener('touchstart', () => {}, {passive: true});
     card.addEventListener('click', () => openModModal(mod));
     card.querySelectorAll('.mod-img').forEach(img => {
       img.addEventListener('error', () => { img.style.display = 'none'; });
@@ -550,6 +551,8 @@ function buildModCard(mod) {
 
 function attachCardClicks(grid, mods) {
   grid.querySelectorAll('.mod-card').forEach((card, i) => {
+    // Empty touchstart makes iOS fire :active on div elements
+    card.addEventListener('touchstart', () => {}, {passive: true});
     card.addEventListener('click', () => openModModal(mods[i]));
   });
 }
