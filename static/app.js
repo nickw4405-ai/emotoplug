@@ -194,7 +194,7 @@ window.addEventListener('load', () => {
 });
 
 /* ── SEARCH ─────────────────────────────────────────────── */
-$('btn-search').addEventListener('click', doSearch);
+$('btn-search').addEventListener('click', () => doSearch());
 $('search-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 document.querySelectorAll('.trend-tag').forEach(btn =>
   btn.addEventListener('click', () => { $('search-input').value = btn.dataset.q; doSearch(); }));
@@ -719,15 +719,17 @@ async function verifySubscription(sessionId, email) {
    time so we never navigate to a stale pre-fetched listing that may have sold. */
 async function openDirect(event, btn, search, condition) {
   event.preventDefault();
+  // Open the window synchronously (direct user gesture) — Safari blocks window.open after await
+  const win = window.open(btn.href, '_blank', 'noopener,noreferrer');
   const orig = btn.innerHTML;
   btn.innerHTML = '⏳ Finding best deal...';
   btn.style.pointerEvents = 'none';
   try {
     const res = await fetch(`/goto/ebay/url?q=${encodeURIComponent(search)}&c=${condition}`);
     const data = await res.json();
-    window.open(data.url, '_blank', 'noopener,noreferrer');
+    if (win) win.location.href = data.url;
   } catch {
-    window.open(btn.href, '_blank', 'noopener,noreferrer');
+    // fallback: win already has btn.href from window.open above
   } finally {
     btn.innerHTML = orig;
     btn.style.pointerEvents = '';
