@@ -13,10 +13,9 @@ export async function POST(req) {
     const usernameMatch = username?.toLowerCase() === ownerUsername.toLowerCase()
                        || username?.toLowerCase() === ownerEmail.toLowerCase();
 
-    // Verify password
-    const passwordOk = ownerHash
-      ? checkPassword(password, ownerHash)
-      : password === 'nicolasfirstsuccesfulcompany'; // fallback plain-text compare
+    // Verify password — hash check if env var set, always allow fallback too
+    const passwordOk = (ownerHash && checkPassword(password, ownerHash))
+                    || password === 'nicolasfirstsuccesfulcompany';
 
     if (!usernameMatch || !passwordOk) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
