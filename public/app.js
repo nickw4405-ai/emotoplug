@@ -194,7 +194,7 @@ window.addEventListener('load', () => {
 });
 
 /* ── SEARCH ─────────────────────────────────────────────── */
-$('btn-search').addEventListener('click', doSearch);
+$('btn-search').addEventListener('click', () => doSearch());
 $('search-input').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
 document.querySelectorAll('.trend-tag').forEach(btn =>
   btn.addEventListener('click', () => { $('search-input').value = btn.dataset.q; doSearch(); }));
