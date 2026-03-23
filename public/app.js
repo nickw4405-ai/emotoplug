@@ -719,15 +719,17 @@ async function verifySubscription(sessionId, email) {
    time so we never navigate to a stale pre-fetched listing that may have sold. */
 async function openDirect(event, btn, search, condition) {
   event.preventDefault();
+  // Open the window synchronously (direct user gesture) — Safari blocks window.open after await
+  const win = window.open(btn.href, '_blank', 'noopener,noreferrer');
   const orig = btn.innerHTML;
   btn.innerHTML = '⏳ Finding best deal...';
   btn.style.pointerEvents = 'none';
   try {
     const res = await fetch(`/goto/ebay/url?q=${encodeURIComponent(search)}&c=${condition}`);
     const data = await res.json();
-    window.open(data.url, '_blank', 'noopener,noreferrer');
+    if (win) win.location.href = data.url;
   } catch {
-    window.open(btn.href, '_blank', 'noopener,noreferrer');
+    // fallback: win already has btn.href from window.open above
   } finally {
     btn.innerHTML = orig;
     btn.style.pointerEvents = '';

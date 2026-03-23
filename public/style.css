@@ -134,8 +134,7 @@ main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 20px 8
 .mods-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
 
 /* ── Mod card ── */
-.mod-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s;display:flex;flex-direction:column}
-.mod-card:hover{border-color:rgba(0,229,255,.3);box-shadow:0 16px 40px rgba(0,0,0,.6)}
+.mod-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:border-color .2s,box-shadow .2s;display:flex;flex-direction:column}
 .mod-img-wrap{position:relative;height:200px;background:var(--surface2);overflow:hidden;display:flex;align-items:center;justify-content:center}
 .mod-img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;right:0;bottom:0;z-index:2}
 .mod-img-fallback{font-size:3.5rem;z-index:1;opacity:.4}
@@ -429,10 +428,16 @@ footer a{color:var(--muted)}footer a:hover{color:var(--accent)}
 .owner-signin-section input:focus{border-color:var(--accent)}
 .owner-error{color:var(--red);font-size:0.82rem;text-align:center;padding:6px;background:rgba(239,68,68,0.1);border-radius:6px}
 
-/* ── Hover-only effects (desktop/mouse) — prevents iOS double-tap ── */
+/* ── Hover-only effects (desktop/mouse) — prevents iOS Safari double-tap ── */
+/* On touch devices @media(hover:hover) is false so NO :hover styles fire at all */
 @media(hover:hover){
-  .mod-card:hover{transform:translateY(-3px)}
+  .mod-card:hover{border-color:rgba(0,229,255,.3);transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.6)}
   .mod-img{transition:transform .4s ease}
   .mod-card:hover .mod-img{transform:scale(1.08)}
   .btn-primary:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px)}
+}
+/* Touch active states — instant visual feedback on tap */
+@media(hover:none){
+  .mod-card:active{border-color:rgba(0,229,255,.4);background:var(--surface2)}
+  .btn-primary:active:not(:disabled){filter:brightness(0.9)}
 }
