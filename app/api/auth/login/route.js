@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { checkPassword, hashPassword, createToken, sessionCookie } from '../../../../lib/auth.js';
+import { checkPassword, createToken, COOKIE_NAME } from '../../../../lib/auth.js';
 
 export async function POST(req) {
   try {
@@ -23,7 +23,13 @@ export async function POST(req) {
 
     const token = createToken({ role: 'owner', username: ownerUsername, email: ownerEmail });
     const res   = NextResponse.json({ ok: true, redirect: '/admin' });
-    res.headers.set('Set-Cookie', sessionCookie(token));
+    res.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60,
+    });
     return res;
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
