@@ -22,15 +22,15 @@ export async function POST(req) {
     }
 
     const token = createToken({ role: 'owner', username: ownerUsername, email: ownerEmail });
-    const res   = NextResponse.json({ ok: true, redirect: '/admin' });
-    res.cookies.set(COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60,
+    const maxAge = 7 * 24 * 60 * 60;
+    return new Response(JSON.stringify({ ok: true, redirect: '/admin' }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`,
+        'Cache-Control': 'private, no-store',
+      },
     });
-    return res;
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
