@@ -12,7 +12,7 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="/style.css?v=3" />
+        <link rel="stylesheet" href="/style.css?v=4" />
         {stripeKey && (
           <>
             {/* eslint-disable-next-line @next/next/no-sync-scripts */}
@@ -26,7 +26,7 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script src="/app.js?v=3" defer />
+        <script src="/app.js?v=4" defer />
       </body>
     </html>
   );
