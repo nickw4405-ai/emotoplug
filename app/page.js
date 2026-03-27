@@ -290,15 +290,15 @@ export default function Page() {
 
             {/* ── Tabs ── */}
             <div className="sub-tabs">
-              <button className="sub-tab active" id="sub-tab-pay">💳 Pay $20/yr</button>
+              <button className="sub-tab active" id="sub-tab-pay">💳 Pay $13/mo</button>
               <button className="sub-tab" id="sub-tab-survey">📋 Earn Free</button>
             </div>
 
             {/* ── PAY TAB ── */}
             <div id="sub-pane-pay" className="sub-pane">
               <div className="sub-price-card">
-                <div className="sub-price-amount">$20</div>
-                <div className="sub-price-period">per year</div>
+                <div className="sub-price-amount">$13</div>
+                <div className="sub-price-period">per month</div>
                 <div className="sub-price-note">Cancel anytime · Secure via Stripe</div>
               </div>
               <ul className="sub-features">
@@ -312,7 +312,7 @@ export default function Page() {
                 <input id="sub-name"  type="text"  placeholder="Your name"  autoComplete="name" />
                 <input id="sub-email" type="email" placeholder="Your email" autoComplete="email" />
                 <input id="sub-discount-code" type="text" placeholder="Discount code (optional)" style={{textTransform:'uppercase'}} />
-                <button className="btn btn-primary btn-large sub-cta-btn" id="btn-subscribe">Subscribe — $20 / year →</button>
+                <button className="btn btn-primary btn-large sub-cta-btn" id="btn-subscribe">Subscribe — $13 / month →</button>
                 <p id="sub-error" className="sub-error hidden"></p>
                 <p className="sub-legal">By subscribing you agree to our <span id="paywall-terms-link" style={{cursor:'pointer',textDecoration:'underline'}}>Terms of Service</span>. Auto-renews annually.</p>
               </div>
@@ -324,7 +324,7 @@ export default function Page() {
                 <p>🎯 Complete easy surveys → Earn credits → Get free access</p>
                 <ul style={{textAlign:'left',margin:'8px 0 4px 0',paddingLeft:'1.2em',lineHeight:'1.8'}}>
                   <li>Every <strong>$1</strong> a survey pays = <strong>100 Credits</strong></li>
-                  <li>Reach <strong>2,000 Credits ($20)</strong> → get <strong>1 year FREE</strong></li>
+                  <li>Reach <strong>1,300 Credits ($13)</strong> → get <strong>1 month FREE</strong></li>
                   <li>Got fewer? Hit <em>Combine</em> anytime for a <strong>% discount code</strong></li>
                 </ul>
                 <p style={{fontSize:'0.82rem',color:'var(--muted)',marginTop:'6px',lineHeight:'1.6'}}>
