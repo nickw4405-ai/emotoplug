@@ -672,32 +672,7 @@ $('btn-subscribe').addEventListener('click', async () => {
   btn.textContent = '⏳ Creating account…';
   btn.disabled = true;
 
-  // ── Step 1: Validate discount code (no Stripe call needed) ───
-  let promoCode = '';
-  if (discount_code) {
-    try {
-      const cRes  = await fetch('/api/subscription/validate-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: discount_code }),
-      });
-      const cData = await cRes.json();
-      if (!cRes.ok) {
-        errEl.textContent = '❌ ' + (cData.message || 'Discount code is invalid or already used.');
-        errEl.classList.remove('hidden');
-        btn.textContent = orig; btn.disabled = false;
-        return;
-      }
-      promoCode = cData.code; // valid — will be pre-filled in Stripe
-    } catch (e) {
-      errEl.textContent = '❌ Could not validate discount code. Try again.';
-      errEl.classList.remove('hidden');
-      btn.textContent = orig; btn.disabled = false;
-      return;
-    }
-  }
-
-  // ── Step 2: Create account ────────────────────────────────────
+  // ── Step 1: Create account ────────────────────────────────────
   try {
     const regRes  = await fetch('/api/user/register', {
       method: 'POST',
@@ -722,10 +697,44 @@ $('btn-subscribe').addEventListener('click', async () => {
 
   btn.textContent = '⏳ Setting up payment…';
 
-  // ── Step 3: Redirect to Stripe with promo code pre-filled ────
+  // ── Step 2: Discount code → Stripe checkout; no code → payment link ──────
+  if (discount_code) {
+    try {
+      const res  = await fetch('/api/subscription/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, discount_code }),
+      });
+      const data = await res.json();
+      if (data.error === 'invalid_code') {
+        errEl.textContent = '❌ ' + (data.message || 'Code is invalid or already used.');
+        errEl.classList.remove('hidden');
+        btn.textContent = orig; btn.disabled = false;
+        return;
+      }
+      if (data.type === 'free_access') {
+        try { saveSubToken(data.token, data.expires_at); } catch (_) {}
+        hide('sub-paywall-modal');
+        show('sub-success-modal');
+        updateHeaderForUser();
+        return;
+      }
+      if (data.checkout_url) { location.href = data.checkout_url; return; }
+      errEl.textContent = '❌ ' + (data.error || 'Could not apply discount. Try again.');
+      errEl.classList.remove('hidden');
+      btn.textContent = orig; btn.disabled = false;
+      return;
+    } catch (e) {
+      errEl.textContent = '❌ Could not apply discount code. Try again.';
+      errEl.classList.remove('hidden');
+      btn.textContent = orig; btn.disabled = false;
+      return;
+    }
+  }
+
+  // No discount code — go straight to Stripe payment link
   const payUrl = new URL('https://buy.stripe.com/aFaaEZ9gH8gB2L5cj5cbC01');
-  if (email)     payUrl.searchParams.set('prefilled_email', email);
-  if (promoCode) payUrl.searchParams.set('prefilled_promo_code', promoCode);
+  if (email) payUrl.searchParams.set('prefilled_email', email);
   location.href = payUrl.toString();
 });
 

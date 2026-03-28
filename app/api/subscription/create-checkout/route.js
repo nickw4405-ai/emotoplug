@@ -6,10 +6,10 @@ export async function POST(req) {
   const { email, name, discount_code } = await req.json().catch(() => ({}));
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://emotoplug.com';
 
-  // ── Validate discount code if provided ──────────────────────────────────
+  // ── Validate discount code ───────────────────────────────────────────────
   let discountPct = 0;
   if (discount_code) {
-    const raw = await kvGet(`disc:${discount_code}`);
+    const raw      = await kvGet(`disc:${discount_code}`);
     const codeData = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : null;
 
     if (!codeData || (codeData.oneTime !== false && codeData.used)) {
@@ -28,42 +28,50 @@ export async function POST(req) {
     }
   }
 
-  // ── Stripe checkout ──────────────────────────────────────────────────────
+  // ── Stripe checkout via direct fetch (no SDK) ────────────────────────────
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
     return NextResponse.json({ error: 'stripe_not_configured' }, { status: 400 });
   }
 
   try {
-    const { default: Stripe } = await import('stripe');
-    const stripe = new Stripe(secretKey);
-
-    const baseAmount      = 2100; // $21.00 in cents
+    const baseAmount       = 2100; // $21.00 in cents
     const discountedAmount = Math.round(baseAmount * (1 - discountPct / 100));
+    const productName      = discountPct > 0
+      ? `emotoplug Lifetime Access (${discountPct}% off)`
+      : 'emotoplug Lifetime Access';
+    const successUrl = `${baseUrl}/?subscribed={CHECKOUT_SESSION_ID}&sub_email=${encodeURIComponent(email || '')}`;
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      customer_email: email || undefined,
-      line_items: [{
-        price_data: {
-          currency:   'usd',
-          unit_amount: discountedAmount,
-          product_data: {
-            name:        discountPct > 0
-              ? `emotoplug Lifetime Access (${discountPct}% off)`
-              : 'emotoplug Lifetime Access',
-            description: 'Unlimited searches — one-time payment',
-          },
-        },
-        quantity: 1,
-      }],
-      mode:        'payment',
-      success_url: `${baseUrl}/?subscribed={CHECKOUT_SESSION_ID}&sub_email=${encodeURIComponent(email || '')}`,
-      cancel_url:  `${baseUrl}/`,
-      metadata:    { email: email || '', name: name || '', discount_code: discount_code || '' },
+    const params = new URLSearchParams();
+    params.set('mode', 'payment');
+    params.set('payment_method_types[]', 'card');
+    params.set('line_items[0][price_data][currency]', 'usd');
+    params.set('line_items[0][price_data][unit_amount]', String(discountedAmount));
+    params.set('line_items[0][price_data][product_data][name]', productName);
+    params.set('line_items[0][price_data][product_data][description]', 'Unlimited searches — one-time payment');
+    params.set('line_items[0][quantity]', '1');
+    params.set('success_url', successUrl);
+    params.set('cancel_url', `${baseUrl}/`);
+    if (email) params.set('customer_email', email);
+    if (email) params.set('metadata[email]', email);
+    if (name)  params.set('metadata[name]', name);
+    if (discount_code) params.set('metadata[discount_code]', discount_code);
+
+    const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method:  'POST',
+      headers: {
+        'Authorization': `Bearer ${secretKey}`,
+        'Content-Type':  'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
     });
 
-    // Mark one-time codes as used after Stripe session created
+    const session = await stripeRes.json();
+    if (!stripeRes.ok) {
+      return NextResponse.json({ error: session.error?.message || 'Stripe error' }, { status: 500 });
+    }
+
+    // Mark one-time codes as used after session created
     if (discount_code && discountPct > 0) {
       const raw2 = await kvGet(`disc:${discount_code}`);
       const cd2  = raw2 ? (typeof raw2 === 'string' ? JSON.parse(raw2) : raw2) : {};
