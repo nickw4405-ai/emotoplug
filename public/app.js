@@ -1090,6 +1090,7 @@ function updateHeaderForUser() {
     $('header-user-name').classList.remove('hidden');
     $('btn-signin-header').classList.add('hidden');
     $('btn-register-header').classList.add('hidden');
+    $('btn-manage-sub-header').classList.remove('hidden');
     $('btn-signout-header').classList.remove('hidden');
     // Link sub token to account if we have one
     const token = getSubToken();
@@ -1107,9 +1108,57 @@ function updateHeaderForUser() {
     $('header-user-name').classList.add('hidden');
     $('btn-signin-header').classList.remove('hidden');
     $('btn-register-header').classList.remove('hidden');
+    $('btn-manage-sub-header').classList.add('hidden');
     $('btn-signout-header').classList.add('hidden');
   }
 }
+
+/* ── MANAGE SUBSCRIPTION MODAL ── */
+function openManageSubModal() {
+  show('manage-sub-pane-main');
+  hide('manage-sub-pane-cancel');
+  hide('manage-sub-pane-done');
+  $('manage-sub-cancel-error').classList.add('hidden');
+  show('manage-sub-modal');
+}
+$('btn-manage-sub-header').addEventListener('click', openManageSubModal);
+$('btn-close-manage-sub').addEventListener('click', () => hide('manage-sub-modal'));
+$('manage-sub-backdrop').addEventListener('click', () => hide('manage-sub-modal'));
+$('btn-open-cancel-pane').addEventListener('click', () => {
+  hide('manage-sub-pane-main');
+  show('manage-sub-pane-cancel');
+});
+$('btn-cancel-go-back').addEventListener('click', () => {
+  hide('manage-sub-pane-cancel');
+  show('manage-sub-pane-main');
+});
+$('btn-confirm-cancel').addEventListener('click', async () => {
+  const errEl = $('manage-sub-cancel-error');
+  const btn   = $('btn-confirm-cancel');
+  errEl.classList.add('hidden');
+  btn.textContent = 'Cancelling…'; btn.disabled = true;
+  try {
+    const email = currentUser?.email || '';
+    const res   = await fetch('/api/subscription/cancel', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'Could not cancel.');
+    // Remove local token + user
+    localStorage.removeItem(SUB_KEY);
+    currentUser = null;
+    localStorage.removeItem('emf_user');
+    updateHeaderForUser();
+    hide('manage-sub-pane-cancel');
+    show('manage-sub-pane-done');
+  } catch(e) {
+    errEl.textContent = e.message || 'Something went wrong. Try again.';
+    errEl.classList.remove('hidden');
+    btn.textContent = 'Yes, Cancel'; btn.disabled = false;
+  }
+});
+$('btn-cancel-done-close').addEventListener('click', () => hide('manage-sub-modal'));
 
 function switchAuthTab(tab) {
   ['signin','register'].forEach(t => {

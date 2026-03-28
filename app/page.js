@@ -21,6 +21,7 @@ export default function Page() {
             <span id="header-user-name" className="header-user-name hidden"></span>
             <button className="btn btn-outline btn-sm" id="btn-signin-header">Sign In</button>
             <button className="btn btn-primary btn-sm hidden" id="btn-register-header">Create Account</button>
+            <button className="btn btn-outline btn-sm hidden" id="btn-manage-sub-header">Manage</button>
             <button className="btn btn-ghost btn-sm hidden" id="btn-signout-header">Sign Out</button>
           </div>
         </div>
@@ -479,6 +480,47 @@ export default function Page() {
             <h4>6. Privacy</h4>
             <p>We store only your name and email for account purposes. We do not sell your data.</p>
             <button className="btn btn-primary" style={{marginTop:'16px'}} id="btn-accept-terms">I Understand &amp; Accept</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── MANAGE SUBSCRIPTION MODAL ── */}
+      <div id="manage-sub-modal" className="modal hidden">
+        <div className="modal-backdrop" id="manage-sub-backdrop"></div>
+        <div className="modal-box" style={{maxWidth:'420px'}}>
+          <div className="modal-header">
+            <h3>⚙️ Manage Subscription</h3>
+            <button className="btn-close" id="btn-close-manage-sub">✕</button>
+          </div>
+          <div id="manage-sub-pane-main" style={{padding:'16px 0',display:'flex',flexDirection:'column',gap:'14px'}}>
+            <p style={{color:'var(--muted)',fontSize:'.9rem'}}>Your subscription gives you full access to all mods, prices, and tools on emotoplug.</p>
+            <div style={{background:'var(--surface)',borderRadius:'10px',padding:'12px 16px',fontSize:'.85rem',color:'var(--muted)'}}>
+              Subscription is billed monthly through Stripe. You can cancel at any time below.
+            </div>
+            <button className="btn btn-outline" id="btn-open-cancel-pane" style={{borderColor:'var(--red)',color:'var(--red)'}}>Cancel Subscription</button>
+            <div style={{background:'var(--surface)',borderRadius:'10px',padding:'12px 16px',fontSize:'.82rem',color:'var(--muted)',borderLeft:'3px solid var(--accent)'}}>
+              <strong style={{color:'var(--text)'}}>Can&apos;t cancel because you forgot your password?</strong><br/>
+              Email us at <a href="mailto:nickw9745@gmail.com" style={{color:'var(--accent)'}}>nickw9745@gmail.com</a> and we&apos;ll cancel it for you right away.
+            </div>
+          </div>
+          <div id="manage-sub-pane-cancel" className="hidden" style={{padding:'16px 0',display:'flex',flexDirection:'column',gap:'14px'}}>
+            <p style={{fontWeight:'700',fontSize:'1rem'}}>Are you sure you want to cancel?</p>
+            <ul style={{color:'var(--muted)',fontSize:'.85rem',paddingLeft:'18px',lineHeight:'1.7'}}>
+              <li>Your access will be removed immediately</li>
+              <li>You won&apos;t be charged again</li>
+              <li>You can resubscribe anytime</li>
+            </ul>
+            <p id="manage-sub-cancel-error" className="sub-error hidden"></p>
+            <div style={{display:'flex',gap:'10px'}}>
+              <button className="btn btn-ghost" id="btn-cancel-go-back" style={{flex:'1'}}>Keep My Plan</button>
+              <button className="btn btn-primary" id="btn-confirm-cancel" style={{flex:'1',background:'var(--red)',borderColor:'var(--red)'}}>Yes, Cancel</button>
+            </div>
+          </div>
+          <div id="manage-sub-pane-done" className="hidden" style={{padding:'24px 0',textAlign:'center',display:'flex',flexDirection:'column',gap:'14px',alignItems:'center'}}>
+            <div style={{fontSize:'2.5rem'}}>✅</div>
+            <p style={{fontWeight:'700'}}>Subscription Cancelled</p>
+            <p style={{color:'var(--muted)',fontSize:'.85rem'}}>Your access has been removed. You won&apos;t be charged again. Thanks for trying emotoplug!</p>
+            <button className="btn btn-primary" id="btn-cancel-done-close">Close</button>
           </div>
         </div>
       </div>
