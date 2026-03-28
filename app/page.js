@@ -309,12 +309,13 @@ export default function Page() {
                 <li>✅ AI-powered bike recommendations</li>
               </ul>
               <div className="sub-form">
-                <input id="sub-name"  type="text"  placeholder="Your name"  autoComplete="name" />
-                <input id="sub-email" type="email" placeholder="Your email" autoComplete="email" />
+                <input id="sub-name"     type="text"     placeholder="Your name"                   autoComplete="name" />
+                <input id="sub-email"    type="email"    placeholder="Your email"                  autoComplete="email" />
+                <input id="sub-password" type="password" placeholder="Create a password (min 6 chars)" autoComplete="new-password" />
                 <input id="sub-discount-code" type="text" placeholder="Discount code (optional)" style={{textTransform:'uppercase'}} />
                 <button className="btn btn-primary btn-large sub-cta-btn" id="btn-subscribe">Subscribe — $13 / month →</button>
                 <p id="sub-error" className="sub-error hidden"></p>
-                <p className="sub-legal">By subscribing you agree to our <span id="paywall-terms-link" style={{cursor:'pointer',textDecoration:'underline'}}>Terms of Service</span>. Auto-renews annually.</p>
+                <p className="sub-legal">By subscribing you agree to our <span id="paywall-terms-link" style={{cursor:'pointer',textDecoration:'underline'}}>Terms of Service</span>. Auto-renews monthly.</p>
               </div>
             </div>
 

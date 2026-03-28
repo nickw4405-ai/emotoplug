@@ -28,7 +28,7 @@ function saveSubToken(token, expiresAt) {
 }
 
 function showPaywall() {
-  $('sub-name').value = ''; $('sub-email').value = '';
+  $('sub-name').value = ''; $('sub-email').value = ''; $('sub-password').value = '';
   $('sub-discount-code').value = '';
   $('sub-error').classList.add('hidden');
   // Always open on Pay tab
@@ -646,6 +646,7 @@ let _pendingSearchQuery = null;
 $('btn-subscribe').addEventListener('click', async () => {
   const name          = $('sub-name').value.trim();
   const email         = $('sub-email').value.trim();
+  const password      = $('sub-password').value;
   const discount_code = ($('sub-discount-code').value.trim().toUpperCase()) || undefined;
   const errEl         = $('sub-error');
   errEl.classList.add('hidden');
@@ -660,14 +661,42 @@ $('btn-subscribe').addEventListener('click', async () => {
     errEl.classList.remove('hidden');
     return;
   }
+  if (!password || password.length < 6) {
+    errEl.textContent = 'Please create a password (at least 6 characters).';
+    errEl.classList.remove('hidden');
+    return;
+  }
 
   const btn  = $('btn-subscribe');
   const orig = btn.textContent;
-  btn.textContent = '⏳ Setting up payment…';
+  btn.textContent = '⏳ Creating account…';
   btn.disabled = true;
 
   try {
-    // If discount code provided, use API to validate and get checkout URL
+    // ── Step 1: Create account ──────────────────────────────────
+    const regRes  = await fetch('/api/user/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
+    const regData = await regRes.json();
+    if (!regRes.ok) {
+      // Email already exists — let them know to sign in
+      const msg = regData.error || 'Could not create account.';
+      errEl.textContent = msg.includes('already exists')
+        ? '⚠️ That email already has an account — sign in above to access your subscription.'
+        : '❌ ' + msg;
+      errEl.classList.remove('hidden');
+      btn.textContent = orig; btn.disabled = false;
+      return;
+    }
+    // Save user locally
+    currentUser = { name: regData.name || name, email, subLinked: false };
+    localStorage.setItem('emf_user', JSON.stringify(currentUser));
+
+    btn.textContent = '⏳ Setting up payment…';
+
+    // ── Step 2: Handle discount code or go to Stripe ────────────
     if (discount_code) {
       const res  = await fetch('/api/subscription/create-checkout', {
         method: 'POST',
@@ -687,6 +716,7 @@ $('btn-subscribe').addEventListener('click', async () => {
         saveSubToken(data.token, data.expires_at);
         hide('sub-paywall-modal');
         show('sub-success-modal');
+        updateHeaderForUser();
         return;
       }
       if (data.checkout_url) {
