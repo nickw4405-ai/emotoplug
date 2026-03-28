@@ -667,37 +667,39 @@ $('btn-subscribe').addEventListener('click', async () => {
   btn.disabled = true;
 
   try {
-    const res  = await fetch('/api/subscription/create-checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, discount_code }),
-    });
-    const data = await res.json();
+    // If discount code provided, use API to validate and get checkout URL
+    if (discount_code) {
+      const res  = await fetch('/api/subscription/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, discount_code }),
+      });
+      const data = await res.json();
 
-    if (data.error === 'stripe_not_configured') {
-      errEl.textContent = '💳 Payment system is being set up — check back soon!';
-      errEl.classList.remove('hidden');
-      btn.textContent = orig; btn.disabled = false;
-      return;
-    }
-    if (data.error === 'invalid_code') {
-      errEl.textContent = '❌ ' + (data.message || 'Discount code is invalid or already used.');
-      errEl.classList.remove('hidden');
-      btn.textContent = orig; btn.disabled = false;
-      return;
-    }
-    // Free access via 100% discount code
-    if (data.type === 'free_access') {
-      saveSubToken(data.token, data.expires_at);
-      hide('sub-paywall-modal');
-      show('sub-success-modal');
-      return;
-    }
-    if (data.checkout_url) {
-      location.href = data.checkout_url;
-    } else {
+      if (data.error === 'invalid_code') {
+        errEl.textContent = '❌ ' + (data.message || 'Discount code is invalid or already used.');
+        errEl.classList.remove('hidden');
+        btn.textContent = orig; btn.disabled = false;
+        return;
+      }
+      // Free access via 100% discount code
+      if (data.type === 'free_access') {
+        saveSubToken(data.token, data.expires_at);
+        hide('sub-paywall-modal');
+        show('sub-success-modal');
+        return;
+      }
+      if (data.checkout_url) {
+        location.href = data.checkout_url;
+        return;
+      }
       throw new Error(data.error || 'Could not start checkout');
     }
+
+    // No discount code — redirect directly to Stripe payment link
+    const payUrl = new URL('https://buy.stripe.com/6oU9AV8cDdAV71ldn9cbC00');
+    if (email) payUrl.searchParams.set('prefilled_email', email);
+    location.href = payUrl.toString();
   } catch (e) {
     errEl.textContent = e.message || 'Something went wrong. Try again.';
     errEl.classList.remove('hidden');
