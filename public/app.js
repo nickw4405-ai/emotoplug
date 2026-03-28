@@ -1228,7 +1228,7 @@ $('btn-forgot-submit').addEventListener('click', async () => {
         show('forgot-link-wrap');
       } else {
         // Email sent via Resend (or account not found — same message either way)
-        errEl.textContent = '✅ If that email has an account, a reset link has been sent. Check your inbox.';
+        errEl.textContent = '✅ Reset link sent! Check your inbox — if you don\'t see it, check your spam folder.';
         errEl.style.color = '#22c55e';
         errEl.classList.remove('hidden');
       }
