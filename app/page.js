@@ -283,6 +283,10 @@ export default function Page() {
           <div className="modal-box sub-paywall-box">
             <button className="btn-close" id="btn-close-paywall" style={{position:'absolute',top:'14px',right:'14px'}}>✕</button>
 
+            <div style={{background:'#1a1a2e',border:'1px solid #a855f7',borderRadius:'10px',padding:'10px 14px',marginBottom:'12px',textAlign:'center',fontSize:'.88rem',lineHeight:'1.6',color:'#e2e2e2'}}>
+              🎵 Follow <a href="https://www.tiktok.com/@emotoplug.com1" target="_blank" rel="noopener noreferrer" style={{color:'#a855f7',fontWeight:'600'}}>@emotoplug.com1</a> on TikTok and message us for <strong style={{color:'#fff'}}>38–51% off</strong>
+            </div>
+
             <div className="sub-paywall-header">
               <div className="sub-paywall-icon">🚲</div>
               <h2>Unlock emotoplug</h2>
