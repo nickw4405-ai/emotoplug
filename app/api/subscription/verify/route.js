@@ -1,34 +1,20 @@
 import { NextResponse } from 'next/server';
-import { createSubscriptionToken } from '../../../../lib/subscription.js';
+import { kvGet } from '../../../../lib/kv.js';
 
+// Looks up the token stored by the webhook handler — no outbound Stripe call needed.
 export async function POST(req) {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    return NextResponse.json({ error: 'stripe_not_configured' }, { status: 400 });
+  const { session_id } = await req.json().catch(() => ({}));
+
+  if (!session_id) {
+    return NextResponse.json({ error: 'missing_session_id' }, { status: 400 });
   }
 
-  try {
-    const { default: Stripe } = await import('stripe');
-    const stripe = new Stripe(secretKey);
-    const { session_id, email } = await req.json();
-
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-
-    // Accept complete subscription checkout sessions
-    if (session.status !== 'complete') {
-      return NextResponse.json({ error: 'Payment not completed' }, { status: 400 });
-    }
-
-    const customerEmail = session.customer_email
-      || email
-      || session.metadata?.email
-      || 'unknown';
-
-    const token      = createSubscriptionToken(customerEmail);
-    const expiresAt  = Date.now() + 366 * 24 * 60 * 60 * 1000;
-
-    return NextResponse.json({ token, email: customerEmail, expires_at: expiresAt });
-  } catch (e) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  const raw = await kvGet(`sub_session:${session_id}`);
+  if (!raw) {
+    // Webhook hasn't arrived yet — browser should retry
+    return NextResponse.json({ status: 'pending' }, { status: 202 });
   }
+
+  const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  return NextResponse.json({ token: data.token, email: data.email, expires_at: data.expires_at });
 }

@@ -708,18 +708,24 @@ $('btn-subscribe').addEventListener('click', async () => {
 });
 
 async function verifySubscription(sessionId, email) {
-  try {
-    const res  = await fetch('/api/subscription/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId, email }),
-    });
-    const data = await res.json();
-    if (data.token) {
-      saveSubToken(data.token, data.expires_at);
-      show('sub-success-modal');
-    }
-  } catch { /* silent */ }
+  // Retry up to 8 times (16 s) while waiting for Stripe webhook to arrive
+  for (let i = 0; i < 8; i++) {
+    try {
+      const res  = await fetch('/api/subscription/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId, email }),
+      });
+      const data = await res.json();
+      if (data.token) {
+        saveSubToken(data.token, data.expires_at);
+        show('sub-success-modal');
+        return;
+      }
+      if (data.status !== 'pending') break; // real error, stop retrying
+    } catch { /* network error */ }
+    await new Promise(r => setTimeout(r, 2000));
+  }
 }
 
 /* openDirect — called by eBay buttons; fetches a live direct itm/ URL at click
