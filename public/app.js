@@ -647,7 +647,7 @@ $('btn-subscribe').addEventListener('click', async () => {
   const name          = $('sub-name').value.trim();
   const email         = $('sub-email').value.trim();
   const password      = $('sub-password').value;
-  const discount_code = undefined; // users enter promo codes at Stripe checkout
+  const discount_code = ($('sub-discount-code')?.value.trim().toUpperCase()) || '';
   const errEl         = $('sub-error');
   errEl.classList.add('hidden');
 
@@ -672,11 +672,32 @@ $('btn-subscribe').addEventListener('click', async () => {
   btn.textContent = '⏳ Creating account…';
   btn.disabled = true;
 
-  // Build Stripe URL now (synchronous, before any async work)
-  const payUrl = new URL('https://buy.stripe.com/aFaaEZ9gH8gB2L5cj5cbC01');
-  if (email) payUrl.searchParams.set('prefilled_email', email);
+  // ── Step 1: Validate discount code (no Stripe call needed) ───
+  let promoCode = '';
+  if (discount_code) {
+    try {
+      const cRes  = await fetch('/api/subscription/validate-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discount_code }),
+      });
+      const cData = await cRes.json();
+      if (!cRes.ok) {
+        errEl.textContent = '❌ ' + (cData.message || 'Discount code is invalid or already used.');
+        errEl.classList.remove('hidden');
+        btn.textContent = orig; btn.disabled = false;
+        return;
+      }
+      promoCode = cData.code; // valid — will be pre-filled in Stripe
+    } catch (e) {
+      errEl.textContent = '❌ Could not validate discount code. Try again.';
+      errEl.classList.remove('hidden');
+      btn.textContent = orig; btn.disabled = false;
+      return;
+    }
+  }
 
-  // ── Step 1: Create account in background, then redirect ──────
+  // ── Step 2: Create account ────────────────────────────────────
   try {
     const regRes  = await fetch('/api/user/register', {
       method: 'POST',
@@ -696,49 +717,15 @@ $('btn-subscribe').addEventListener('click', async () => {
     currentUser = { name: regData.name || name, email, subLinked: false };
     try { localStorage.setItem('emf_user', JSON.stringify(currentUser)); } catch (_) {}
   } catch (e) {
-    // Network error registering — still let them through to Stripe
     console.warn('Register step failed, proceeding to Stripe anyway:', e.message);
   }
 
   btn.textContent = '⏳ Setting up payment…';
 
-  // ── Step 2: Handle discount code or go to Stripe ────────────
-  if (discount_code) {
-    try {
-      const res  = await fetch('/api/subscription/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, discount_code }),
-      });
-      const data = await res.json();
-      if (data.error === 'invalid_code') {
-        errEl.textContent = '❌ ' + (data.message || 'Discount code is invalid or already used.');
-        errEl.classList.remove('hidden');
-        btn.textContent = orig; btn.disabled = false;
-        return;
-      }
-      if (data.type === 'free_access') {
-        try { saveSubToken(data.token, data.expires_at); } catch (_) {}
-        hide('sub-paywall-modal');
-        show('sub-success-modal');
-        updateHeaderForUser();
-        return;
-      }
-      if (data.checkout_url) { location.href = data.checkout_url; return; }
-      // API returned something unexpected — show the error, never fall through to full price
-      errEl.textContent = '❌ ' + (data.error || data.message || 'Could not apply discount code. Try again.');
-      errEl.classList.remove('hidden');
-      btn.textContent = orig; btn.disabled = false;
-      return;
-    } catch (e) {
-      errEl.textContent = '❌ Could not apply discount code. Try again.';
-      errEl.classList.remove('hidden');
-      btn.textContent = orig; btn.disabled = false;
-      return;
-    }
-  }
-
-  // No discount code — redirect directly to Stripe payment link
+  // ── Step 3: Redirect to Stripe with promo code pre-filled ────
+  const payUrl = new URL('https://buy.stripe.com/aFaaEZ9gH8gB2L5cj5cbC01');
+  if (email)     payUrl.searchParams.set('prefilled_email', email);
+  if (promoCode) payUrl.searchParams.set('prefilled_promo_code', promoCode);
   location.href = payUrl.toString();
 });
 
