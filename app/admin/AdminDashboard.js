@@ -4,6 +4,31 @@ import { useState, useEffect, useCallback } from 'react';
 export default function AdminDashboard({ user }) {
   const [stats,  setStats]  = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [discCodes, setDiscCodes] = useState({}); // pct → { code, copying }
+  const [discLoading, setDiscLoading] = useState({});
+
+  async function generateCode(pct) {
+    setDiscLoading(p => ({ ...p, [pct]: true }));
+    try {
+      const res = await fetch('/api/admin/discount', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pct }),
+      });
+      const data = await res.json();
+      if (data.code) setDiscCodes(p => ({ ...p, [pct]: { code: data.code, copied: false } }));
+    } catch {}
+    setDiscLoading(p => ({ ...p, [pct]: false }));
+  }
+
+  async function copyCode(pct) {
+    const code = discCodes[pct]?.code;
+    if (!code) return;
+    await navigator.clipboard.writeText(code).catch(() => {});
+    setDiscCodes(p => ({ ...p, [pct]: { ...p[pct], copied: true } }));
+    setTimeout(() => setDiscCodes(p => ({ ...p, [pct]: { ...p[pct], copied: false } })), 2000);
+  }
 
   const fetchStats = useCallback(async () => {
     try {
@@ -98,6 +123,38 @@ export default function AdminDashboard({ user }) {
             </div>
           </section>
 
+          {/* Discount Codes */}
+          <section style={s.section}>
+            <h2 style={s.sectionTitle}>🎟️ Discount Codes</h2>
+            <p style={{ color:'var(--muted)', fontSize:'0.85rem', marginBottom:16 }}>
+              Each code is one-time use. Generate a fresh one whenever you need it.
+            </p>
+            <div style={s.discGrid}>
+              {[100, 75, 50, 25, 10].map(pct => {
+                const entry = discCodes[pct];
+                const loading = discLoading[pct];
+                return (
+                  <div key={pct} style={s.discCard}>
+                    <div style={s.discPct}>{pct}% off</div>
+                    {entry ? (
+                      <div style={s.discRow}>
+                        <span style={s.discCode}>{entry.code}</span>
+                        <button onClick={() => copyCode(pct)} style={s.discCopyBtn}>
+                          {entry.copied ? '✓ Copied' : '📋'}
+                        </button>
+                        <button onClick={() => generateCode(pct)} style={s.discRegenBtn} title="Generate new code">↺</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => generateCode(pct)} disabled={loading} style={s.discGenBtn}>
+                        {loading ? 'Generating…' : 'Generate'}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
           {/* Quick Links */}
           <section style={s.section}>
             <h2 style={s.sectionTitle}>🔗 Quick Links</h2>
@@ -163,4 +220,12 @@ const s = {
   stripeBtnOutline:{ display:'inline-block', border:'1px solid var(--border)', color:'var(--muted)', padding:'10px 20px', borderRadius:10, fontSize:'0.9rem', textDecoration:'none' },
   linkGrid:   { display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:12 },
   quickLink:  { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 18px', color:'var(--text)', textDecoration:'none', display:'flex', alignItems:'center', gap:10, fontSize:'0.9rem', fontWeight:500 },
+  discGrid:   { display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))', gap:14 },
+  discCard:   { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:14, padding:'18px 16px', display:'flex', flexDirection:'column', gap:12 },
+  discPct:    { fontSize:'1.1rem', fontWeight:700, color:'var(--text)' },
+  discGenBtn: { background:'linear-gradient(135deg,#00e5ff22,#00e5ff11)', border:'1px solid #00e5ff44', color:'#00e5ff', borderRadius:8, padding:'8px 14px', cursor:'pointer', fontSize:'0.88rem', fontWeight:600 },
+  discRow:    { display:'flex', alignItems:'center', gap:8 },
+  discCode:   { fontFamily:'monospace', fontSize:'1rem', fontWeight:700, color:'#00e5ff', letterSpacing:2, flex:1 },
+  discCopyBtn:{ background:'transparent', border:'1px solid var(--border)', color:'var(--muted)', borderRadius:7, padding:'5px 10px', cursor:'pointer', fontSize:'0.82rem' },
+  discRegenBtn:{ background:'transparent', border:'1px solid var(--border)', color:'var(--muted)', borderRadius:7, padding:'5px 10px', cursor:'pointer', fontSize:'1rem' },
 };
