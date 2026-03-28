@@ -690,7 +690,7 @@ $('btn-subscribe').addEventListener('click', async () => {
       return;
     }
     currentUser = { name: regData.name || name, email, subLinked: false };
-    localStorage.setItem('emf_user', JSON.stringify(currentUser));
+    try { localStorage.setItem('emf_user', JSON.stringify(currentUser)); } catch (_) {}
 
     btn.textContent = '⏳ Setting up payment…';
 

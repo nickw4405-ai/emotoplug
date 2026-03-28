@@ -690,9 +690,9 @@ $('btn-subscribe').addEventListener('click', async () => {
       btn.textContent = orig; btn.disabled = false;
       return;
     }
-    // Save user locally
+    // Save user locally (may fail in Safari private mode — safe to ignore)
     currentUser = { name: regData.name || name, email, subLinked: false };
-    localStorage.setItem('emf_user', JSON.stringify(currentUser));
+    try { localStorage.setItem('emf_user', JSON.stringify(currentUser)); } catch (_) {}
 
     btn.textContent = '⏳ Setting up payment…';
 
