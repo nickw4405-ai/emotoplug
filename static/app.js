@@ -1224,7 +1224,8 @@ $('btn-forgot-submit').addEventListener('click', async () => {
         linkEl.textContent = data.resetUrl;
         show('forgot-link-wrap');
       } else {
-        errEl.textContent = '✅ If that email has an account, a reset link will appear here.';
+        errEl.textContent = '✅ If that email has an account, a reset link has been sent. Check your inbox.';
+        errEl.style.color = '#22c55e';
         errEl.classList.remove('hidden');
       }
     } else {

@@ -1221,13 +1221,15 @@ $('btn-forgot-submit').addEventListener('click', async () => {
     const data = await res.json();
     if (res.ok && data.ok) {
       if (data.resetUrl) {
+        // Dev fallback — Resend not configured, show link directly
         const linkEl = $('forgot-reset-link');
         linkEl.href        = data.resetUrl;
         linkEl.textContent = data.resetUrl;
         show('forgot-link-wrap');
       } else {
-        // Account not found — show generic message (don't reveal)
-        errEl.textContent = '✅ If that email has an account, a reset link will appear here.';
+        // Email sent via Resend (or account not found — same message either way)
+        errEl.textContent = '✅ If that email has an account, a reset link has been sent. Check your inbox.';
+        errEl.style.color = '#22c55e';
         errEl.classList.remove('hidden');
       }
     } else {
