@@ -356,6 +356,94 @@
   </div>
 </div>
 
+<!-- ── SUBSCRIPTION PAYWALL MODAL ─────────────────────── -->
+<div id="sub-paywall-modal" class="modal hidden">
+  <div class="modal-backdrop" id="sub-paywall-backdrop"></div>
+  <div class="modal-box sub-paywall-box">
+    <button class="btn-close" id="btn-close-paywall" style="position:absolute;top:14px;right:14px">✕</button>
+    <div class="sub-paywall-header">
+      <div class="sub-paywall-icon">🚲</div>
+      <h2>Unlock emotoplug</h2>
+      <p>Full access — ebike finder, scam checker, bike mod finder</p>
+    </div>
+    <div class="sub-tabs">
+      <button class="sub-tab active" id="sub-tab-pay">💳 Pay $13/mo</button>
+      <button class="sub-tab" id="sub-tab-survey">📋 Earn Free</button>
+    </div>
+    <div id="sub-pane-pay" class="sub-pane">
+      <div class="sub-price-card">
+        <div class="sub-price-amount">$13</div>
+        <div class="sub-price-period">per month</div>
+        <div class="sub-price-note">Cancel anytime · Secure via Stripe</div>
+      </div>
+      <ul class="sub-features">
+        <li>✅ Unlimited ebike searches</li>
+        <li>✅ New vs Used price comparison</li>
+        <li>✅ Direct cheapest eBay listings</li>
+        <li>✅ Budget filter ($1k / $2k / $3k / $5k)</li>
+        <li>✅ AI-powered bike recommendations</li>
+      </ul>
+      <div class="sub-form">
+        <input id="sub-name" type="text" placeholder="Your name" autocomplete="name" />
+        <input id="sub-email" type="email" placeholder="Your email" autocomplete="email" />
+        <input id="sub-discount-code" type="text" placeholder="Discount code (optional)" style="text-transform:uppercase" />
+        <button class="btn btn-primary btn-large sub-cta-btn" id="btn-subscribe">Subscribe — $13 / month →</button>
+        <p id="sub-error" class="sub-error hidden"></p>
+        <p class="sub-legal">By subscribing you agree to our <span id="paywall-terms-link" style="cursor:pointer;text-decoration:underline">Terms of Service</span>. Auto-renews monthly.</p>
+      </div>
+    </div>
+    <div id="sub-pane-survey" class="sub-pane hidden">
+      <div class="survey-how">
+        <p>🎯 Complete easy surveys → Earn credits → Get free access</p>
+        <ul style="text-align:left;margin:8px 0 4px 0;padding-left:1.2em;line-height:1.8">
+          <li>Every <strong>$1</strong> a survey pays = <strong>100 Credits</strong></li>
+          <li>Reach <strong>1,300 Credits ($13)</strong> → get <strong>1 month FREE</strong></li>
+          <li>Got fewer? Hit <em>Combine</em> anytime for a <strong>% discount code</strong></li>
+        </ul>
+        <p style="font-size:0.82rem;color:var(--muted);margin-top:6px;line-height:1.6">
+          ⏱ <strong>Most people get there in a few days</strong> — knock out 2–3 surveys whenever you have 15 minutes to spare.
+        </p>
+      </div>
+      <div class="survey-progress-wrap">
+        <div class="survey-progress-labels">
+          <span id="survey-dollars-text">$0.00 earned</span>
+          <span id="survey-goal-text">$13.00 goal</span>
+        </div>
+        <div class="survey-progress-bar">
+          <div class="survey-progress-fill" id="survey-progress-fill"></div>
+        </div>
+        <div class="survey-progress-sub" id="survey-progress-sub">Complete a survey below to start earning</div>
+      </div>
+      <div class="survey-iframe-wrap">
+        <iframe id="survey-iframe" class="survey-iframe" src="about:blank" title="Earn credits with surveys"></iframe>
+        <div id="survey-not-configured" class="survey-not-configured">
+          <div style="font-size:2rem;margin-bottom:8px">📋</div>
+          <p style="font-weight:700;margin-bottom:6px">Survey partners coming soon!</p>
+          <p>We're finalising our survey partnerships. Check back soon.</p>
+        </div>
+      </div>
+      <button class="btn btn-accent btn-large survey-combine-btn" id="btn-combine-credits" disabled>
+        🎁 Combine Credits → Get Discount
+      </button>
+      <p id="survey-combine-msg" class="sub-error hidden"></p>
+      <p id="survey-combine-success" class="survey-combine-success hidden"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ── SUBSCRIPTION SUCCESS MODAL ─────────────────────── -->
+<div id="sub-success-modal" class="modal hidden">
+  <div class="modal-backdrop" id="sub-success-backdrop"></div>
+  <div class="modal-box" style="text-align:center;padding:36px 28px">
+    <div style="font-size:3rem;margin-bottom:12px">🎉</div>
+    <h2 style="margin-bottom:8px">You're subscribed!</h2>
+    <p style="color:var(--muted);margin-bottom:20px">Access unlocked for 1 month. Start searching now.</p>
+    <button class="btn btn-primary btn-large" id="btn-sub-success-close" style="width:100%">
+      Start Finding Deals →
+    </button>
+  </div>
+</div>
+
 <!-- ── UNLOCK SUCCESS MODAL ───────────────────────────── -->
 <div id="unlock-modal" class="modal hidden">
   <div class="modal-backdrop" id="unlock-backdrop"></div>
