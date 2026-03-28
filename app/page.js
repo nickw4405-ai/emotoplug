@@ -439,7 +439,6 @@ export default function Page() {
             <input id="signin-password" type="password" placeholder="Password" autoComplete="current-password" />
             <p id="signin-error" className="sub-error hidden"></p>
             <button className="btn btn-primary btn-large" id="btn-signin-submit">Sign In →</button>
-            <button type="button" id="btn-forgot-password" style={{background:'none',border:'none',color:'var(--muted)',fontSize:'0.82rem',cursor:'pointer',marginTop:'4px',textDecoration:'underline',padding:0}}>Forgot password?</button>
             {/* Hidden owner access */}
             <div id="owner-signin-section" className="owner-signin-section hidden">
               <input id="owner-username" type="text" placeholder="Username or email" autoComplete="username" />
@@ -458,18 +457,6 @@ export default function Page() {
             <button className="btn btn-primary btn-large" id="btn-register-submit">Create Account →</button>
           </div>
 
-          {/* Forgot Password pane */}
-          <div id="auth-pane-forgot" className="auth-body hidden">
-            <p style={{color:'var(--muted)',fontSize:'0.88rem',marginBottom:'12px'}}>Enter your email and we&apos;ll give you a reset link.</p>
-            <input id="forgot-email" type="email" placeholder="Email address" autoComplete="email" />
-            <p id="forgot-error" className="sub-error hidden"></p>
-            <div id="forgot-link-wrap" className="hidden" style={{background:'rgba(0,229,255,0.07)',border:'1px solid rgba(0,229,255,0.2)',borderRadius:'10px',padding:'12px',wordBreak:'break-all',fontSize:'0.82rem'}}>
-              <p style={{color:'#00e5ff',fontWeight:600,marginBottom:'6px'}}>✅ Click the link below to set a new password:</p>
-              <a id="forgot-reset-link" href="#" target="_blank" rel="noopener noreferrer" style={{color:'#00e5ff'}}></a>
-            </div>
-            <button className="btn btn-primary btn-large" id="btn-forgot-submit">Get Reset Link →</button>
-            <button type="button" id="btn-back-to-signin" style={{background:'none',border:'none',color:'var(--muted)',fontSize:'0.82rem',cursor:'pointer',textDecoration:'underline',padding:0}}>← Back to sign in</button>
-          </div>
         </div>
       </div>
 

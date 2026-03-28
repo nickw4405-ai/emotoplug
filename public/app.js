@@ -1116,17 +1116,6 @@ function switchAuthTab(tab) {
     $(`auth-tab-${t}`).classList.toggle('active', t === tab);
     t === tab ? show(`auth-pane-${t}`) : hide(`auth-pane-${t}`);
   });
-  hide('auth-pane-forgot');
-}
-
-function showForgotPane() {
-  hide('auth-pane-signin');
-  hide('auth-pane-register');
-  show('auth-pane-forgot');
-  ['auth-tab-signin','auth-tab-register'].forEach(id => $(`${id}`)?.classList.remove('active'));
-  $('forgot-email').value = '';
-  $('forgot-error').classList.add('hidden');
-  hide('forgot-link-wrap');
 }
 
 $('btn-signin-header').addEventListener('click', () => { switchAuthTab('signin'); show('auth-modal'); });
@@ -1135,8 +1124,6 @@ $('btn-close-auth').addEventListener('click', () => hide('auth-modal'));
 $('auth-backdrop').addEventListener('click', () => hide('auth-modal'));
 $('auth-tab-signin').addEventListener('click', () => switchAuthTab('signin'));
 $('auth-tab-register').addEventListener('click', () => switchAuthTab('register'));
-$('btn-forgot-password').addEventListener('click', showForgotPane);
-$('btn-back-to-signin').addEventListener('click', () => switchAuthTab('signin'));
 
 $('btn-signout-header').addEventListener('click', () => {
   currentUser = null;
@@ -1204,47 +1191,9 @@ $('btn-register-submit').addEventListener('click', async () => {
   btn.disabled = false; btn.textContent = 'Create Account →';
 });
 
-// Forgot Password
-$('btn-forgot-submit').addEventListener('click', async () => {
-  const email = $('forgot-email').value.trim();
-  const errEl = $('forgot-error');
-  const btn   = $('btn-forgot-submit');
-  if (!email) return;
-  errEl.classList.add('hidden');
-  hide('forgot-link-wrap');
-  btn.disabled = true; btn.textContent = 'Getting link…';
-  try {
-    const res  = await fetch('/api/user/forgot-password', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ email }),
-    });
-    const data = await res.json();
-    if (res.ok && data.ok) {
-      if (data.resetUrl) {
-        // Dev fallback — Resend not configured, show link directly
-        const linkEl = $('forgot-reset-link');
-        linkEl.href        = data.resetUrl;
-        linkEl.textContent = data.resetUrl;
-        show('forgot-link-wrap');
-      } else {
-        // Email sent via Resend (or account not found — same message either way)
-        errEl.textContent = '✅ Reset link sent! Check your inbox — if you don\'t see it, check your spam folder.';
-        errEl.style.color = '#22c55e';
-        errEl.classList.remove('hidden');
-      }
-    } else {
-      errEl.textContent = data.error || 'Something went wrong.';
-      errEl.classList.remove('hidden');
-    }
-  } catch { errEl.textContent = 'Connection error — try again.'; errEl.classList.remove('hidden'); }
-  btn.disabled = false; btn.textContent = 'Get Reset Link →';
-});
-
 // Enter key support
 ['signin-email','signin-password'].forEach(id => $(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-signin-submit').click(); }));
 ['register-name','register-email','register-password'].forEach(id => $(id)?.addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-register-submit').click(); }));
-$('forgot-email')?.addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-forgot-submit').click(); });
-
 /* ── OWNER LOGIN (hidden — triple-click logo to access) ──── */
 document.querySelector('.logo').addEventListener('click', (() => {
   let clicks = 0, t;
