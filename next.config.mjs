@@ -1,10 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Allow images from external domains used in the app
   images: { unoptimized: true },
-  // Increase serverless function timeout (Vercel Pro: 300s, Hobby: 10s)
-  // Edge functions used for AI calls have no timeout limit
   experimental: {},
+  async headers() {
+    return [
+      {
+        // Never cache the main HTML page — fixes Safari serving stale versions
+        source: '/',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, must-revalidate' },
+        ],
+      },
+      {
+        // Never cache static JS/CSS so version bumps always take effect
+        source: '/:file(app\\.js|style\\.css)',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, must-revalidate' },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
