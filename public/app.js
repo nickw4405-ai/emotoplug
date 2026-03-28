@@ -727,7 +727,7 @@ $('btn-subscribe').addEventListener('click', async () => {
     }
 
     // No discount code — redirect directly to Stripe payment link
-    const payUrl = new URL('https://buy.stripe.com/6oU9AV8cDdAV71ldn9cbC00');
+    const payUrl = new URL('https://buy.stripe.com/aFaaEZ9gH8gB2L5cj5cbC01');
     if (email) payUrl.searchParams.set('prefilled_email', email);
     location.href = payUrl.toString();
   } catch (e) {
