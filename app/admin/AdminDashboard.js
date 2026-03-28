@@ -64,8 +64,6 @@ export default function AdminDashboard({ user }) {
     window.location.href = '/';
   }
 
-  const stripe   = stats?.stripeStats;
-  const stripeOk = stats?.stripeEnabled && stripe && !stripe.error;
 
   return (
     <>
@@ -93,22 +91,13 @@ export default function AdminDashboard({ user }) {
           <section style={s.section}>
             <h2 style={s.sectionTitle}>📊 Live Stats</h2>
             <div style={s.grid}>
-              <StatCard icon="👥" label="Active Visitors"   value={stats ? String(stats.activeUsers) : '—'} sub="On site right now"             color="#00e5ff" />
-              {stripeOk && <>
-                <StatCard icon="💰" label="Total Earned"    value={`$${stripe.totalEarned}`} sub={`${stripe.totalSales} sales total`}  color="#22c55e" />
-                <StatCard icon="🛍️" label="Today's Revenue" value={`$${stripe.todayEarned}`} sub={`${stripe.todaySales} sales today`}  color="#f59e0b" />
-                <StatCard icon="🏦" label="Balance Ready"   value={`$${stripe.available}`}  sub={`$${stripe.pending} pending`}         color="#7c3aed" />
-              </>}
-              {!stats?.stripeEnabled && (
-                <div style={{ ...s.infoCard, gridColumn: '1 / -1' }}>
-                  <p style={{ color: 'var(--muted)' }}>💳 Add Stripe keys to see revenue stats.</p>
-                </div>
-              )}
-              {stats?.stripeEnabled && stripe?.error && (
-                <div style={{ ...s.infoCard, gridColumn: '1 / -1', borderColor: 'rgba(239,68,68,0.3)' }}>
-                  <p style={{ color: '#ef4444' }}>⚠️ Stripe error: {stripe.error}</p>
-                </div>
-              )}
+              <StatCard icon="👥" label="Active Visitors" value={stats ? String(stats.activeUsers) : '—'} sub="On site right now" color="#00e5ff" />
+              <a href="https://dashboard.stripe.com/payments" target="_blank" rel="noopener noreferrer" style={{ ...s.statCard, borderColor:'#22c55e44', textDecoration:'none' }}>
+                <div style={{ ...s.statIcon, background:'#22c55e22', color:'#22c55e' }}>💰</div>
+                <p style={s.statLabel}>Revenue & Payouts</p>
+                <p style={{ ...s.statValue, color:'#22c55e', fontSize:'1rem' }}>View on Stripe ↗</p>
+                <p style={s.statSub}>Live earnings, balance, payouts</p>
+              </a>
             </div>
           </section>
 
