@@ -647,7 +647,7 @@ $('btn-subscribe').addEventListener('click', async () => {
   const name          = $('sub-name').value.trim();
   const email         = $('sub-email').value.trim();
   const password      = $('sub-password').value;
-  const discount_code = ($('sub-discount-code').value.trim().toUpperCase()) || undefined;
+  const discount_code = undefined; // users enter promo codes at Stripe checkout
   const errEl         = $('sub-error');
   errEl.classList.add('hidden');
 
