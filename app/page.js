@@ -295,14 +295,14 @@ export default function Page() {
 
             {/* ── Tabs ── */}
             <div className="sub-tabs">
-              <button className="sub-tab active" id="sub-tab-pay">💳 Pay $21/mo</button>
+              <button className="sub-tab active" id="sub-tab-pay">💳 Pay $17/mo</button>
               <button className="sub-tab" id="sub-tab-survey">📋 Earn Free</button>
             </div>
 
             {/* ── PAY TAB ── */}
             <div id="sub-pane-pay" className="sub-pane">
               <div className="sub-price-card">
-                <div className="sub-price-amount">$21</div>
+                <div className="sub-price-amount">$17</div>
                 <div className="sub-price-period">one-time</div>
                 <div className="sub-price-note">Lifetime access · Secure via Stripe</div>
               </div>
@@ -318,7 +318,7 @@ export default function Page() {
                 <input id="sub-email"    type="email"    placeholder="Your email"                  autoComplete="email" />
                 <input id="sub-password" type="password" placeholder="Create a password (min 6 chars)" autoComplete="new-password" />
                 <input id="sub-discount-code" type="text" placeholder="Discount code (optional)" style={{textTransform:'uppercase'}} />
-                <button className="btn btn-primary btn-large sub-cta-btn" id="btn-subscribe">Get Lifetime Access — $21 →</button>
+                <button className="btn btn-primary btn-large sub-cta-btn" id="btn-subscribe">Get Lifetime Access — $17 →</button>
                 <p id="sub-error" className="sub-error hidden"></p>
                 <p className="sub-legal">By purchasing you agree to our <span id="paywall-terms-link" style={{cursor:'pointer',textDecoration:'underline'}}>Terms of Service</span>. One-time charge. No recurring billing.</p>
               </div>

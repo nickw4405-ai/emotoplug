@@ -38,7 +38,7 @@ export async function POST(req) {
   console.log('Using Stripe key ending in:', keyHint);
 
   try {
-    const baseAmount       = 2100; // $21.00 in cents
+    const baseAmount       = 1700; // $17.00 in cents
     const discountedAmount = Math.round(baseAmount * (1 - discountPct / 100));
     const productName      = discountPct > 0
       ? `emotoplug Lifetime Access (${discountPct}% off)`
