@@ -725,6 +725,11 @@ $('btn-subscribe').addEventListener('click', async () => {
         return;
       }
       if (data.checkout_url) { location.href = data.checkout_url; return; }
+      // API returned something unexpected — show the error, never fall through to full price
+      errEl.textContent = '❌ ' + (data.error || data.message || 'Could not apply discount code. Try again.');
+      errEl.classList.remove('hidden');
+      btn.textContent = orig; btn.disabled = false;
+      return;
     } catch (e) {
       errEl.textContent = '❌ Could not apply discount code. Try again.';
       errEl.classList.remove('hidden');
