@@ -38,7 +38,7 @@ export async function POST(req) {
     const { default: Stripe } = await import('stripe');
     const stripe = new Stripe(secretKey);
 
-    const baseAmount      = 1300; // $13.00 in cents
+    const baseAmount      = 2100; // $21.00 in cents
     const discountedAmount = Math.round(baseAmount * (1 - discountPct / 100));
 
     const session = await stripe.checkout.sessions.create({
@@ -48,17 +48,16 @@ export async function POST(req) {
         price_data: {
           currency:   'usd',
           unit_amount: discountedAmount,
-          recurring:  { interval: 'month' },
           product_data: {
             name:        discountPct > 0
-              ? `emotoplug Monthly Access (${discountPct}% off)`
-              : 'emotoplug Monthly Access',
-            description: 'Unlimited searches — cancel anytime',
+              ? `emotoplug Lifetime Access (${discountPct}% off)`
+              : 'emotoplug Lifetime Access',
+            description: 'Unlimited searches — one-time payment',
           },
         },
         quantity: 1,
       }],
-      mode:        'subscription',
+      mode:        'payment',
       success_url: `${baseUrl}/?subscribed={CHECKOUT_SESSION_ID}&sub_email=${encodeURIComponent(email || '')}`,
       cancel_url:  `${baseUrl}/`,
       metadata:    { email: email || '', name: name || '', discount_code: discount_code || '' },
