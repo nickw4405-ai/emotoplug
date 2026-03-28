@@ -299,8 +299,8 @@ export default function Page() {
             <div id="sub-pane-pay" className="sub-pane">
               <div className="sub-price-card">
                 <div className="sub-price-amount">$13</div>
-                <div className="sub-price-period">per month</div>
-                <div className="sub-price-note">Cancel anytime · Secure via Stripe</div>
+                <div className="sub-price-period">one-time</div>
+                <div className="sub-price-note">Lifetime access · Secure via Stripe</div>
               </div>
               <ul className="sub-features">
                 <li>✅ Unlimited ebike searches</li>
@@ -314,9 +314,9 @@ export default function Page() {
                 <input id="sub-email"    type="email"    placeholder="Your email"                  autoComplete="email" />
                 <input id="sub-password" type="password" placeholder="Create a password (min 6 chars)" autoComplete="new-password" />
                 <input id="sub-discount-code" type="text" placeholder="Discount code (optional)" style={{textTransform:'uppercase'}} />
-                <button className="btn btn-primary btn-large sub-cta-btn" id="btn-subscribe">Subscribe — $13 / month →</button>
+                <button className="btn btn-primary btn-large sub-cta-btn" id="btn-subscribe">Get Lifetime Access — $13 →</button>
                 <p id="sub-error" className="sub-error hidden"></p>
-                <p className="sub-legal">By subscribing you agree to our <span id="paywall-terms-link" style={{cursor:'pointer',textDecoration:'underline'}}>Terms of Service</span>. Auto-renews monthly.</p>
+                <p className="sub-legal">By purchasing you agree to our <span id="paywall-terms-link" style={{cursor:'pointer',textDecoration:'underline'}}>Terms of Service</span>. One-time charge. No recurring billing.</p>
               </div>
             </div>
 
@@ -484,43 +484,23 @@ export default function Page() {
         </div>
       </div>
 
-      {/* ── MANAGE SUBSCRIPTION MODAL ── */}
+      {/* ── ACCOUNT / SUPPORT MODAL ── */}
       <div id="manage-sub-modal" className="modal hidden">
         <div className="modal-backdrop" id="manage-sub-backdrop"></div>
-        <div className="modal-box" style={{maxWidth:'420px'}}>
+        <div className="modal-box" style={{maxWidth:'400px'}}>
           <div className="modal-header">
-            <h3>⚙️ Manage Subscription</h3>
+            <h3>⚙️ Account</h3>
             <button className="btn-close" id="btn-close-manage-sub">✕</button>
           </div>
-          <div id="manage-sub-pane-main" style={{padding:'16px 0',display:'flex',flexDirection:'column',gap:'14px'}}>
-            <p style={{color:'var(--muted)',fontSize:'.9rem'}}>Your subscription gives you full access to all mods, prices, and tools on emotoplug.</p>
-            <div style={{background:'var(--surface)',borderRadius:'10px',padding:'12px 16px',fontSize:'.85rem',color:'var(--muted)'}}>
-              Subscription is billed monthly through Stripe. You can cancel at any time below.
+          <div style={{padding:'16px 0',display:'flex',flexDirection:'column',gap:'14px'}}>
+            <p style={{color:'var(--muted)',fontSize:'.9rem'}}>You have lifetime access to all mods, prices, and tools on emotoplug. ⚡</p>
+            <div style={{background:'var(--surface)',borderRadius:'10px',padding:'14px 16px',fontSize:'.88rem',lineHeight:'1.7'}}>
+              <strong>Any problems or questions?</strong><br/>
+              Email us at{' '}
+              <a href="mailto:nickw9745@gmail.com" style={{color:'var(--accent)'}}>nickw9745@gmail.com</a>
+              {' '}and we&apos;ll get back to you right away.
             </div>
-            <button className="btn btn-outline" id="btn-open-cancel-pane" style={{borderColor:'var(--red)',color:'var(--red)'}}>Cancel Subscription</button>
-            <div style={{background:'var(--surface)',borderRadius:'10px',padding:'12px 16px',fontSize:'.82rem',color:'var(--muted)',borderLeft:'3px solid var(--accent)'}}>
-              <strong style={{color:'var(--text)'}}>Can&apos;t cancel because you forgot your password?</strong><br/>
-              Email us at <a href="mailto:nickw9745@gmail.com" style={{color:'var(--accent)'}}>nickw9745@gmail.com</a> and we&apos;ll cancel it for you right away.
-            </div>
-          </div>
-          <div id="manage-sub-pane-cancel" className="hidden" style={{padding:'16px 0',display:'flex',flexDirection:'column',gap:'14px'}}>
-            <p style={{fontWeight:'700',fontSize:'1rem'}}>Are you sure you want to cancel?</p>
-            <ul style={{color:'var(--muted)',fontSize:'.85rem',paddingLeft:'18px',lineHeight:'1.7'}}>
-              <li>Your access will be removed immediately</li>
-              <li>You won&apos;t be charged again</li>
-              <li>You can resubscribe anytime</li>
-            </ul>
-            <p id="manage-sub-cancel-error" className="sub-error hidden"></p>
-            <div style={{display:'flex',gap:'10px'}}>
-              <button className="btn btn-ghost" id="btn-cancel-go-back" style={{flex:'1'}}>Keep My Plan</button>
-              <button className="btn btn-primary" id="btn-confirm-cancel" style={{flex:'1',background:'var(--red)',borderColor:'var(--red)'}}>Yes, Cancel</button>
-            </div>
-          </div>
-          <div id="manage-sub-pane-done" className="hidden" style={{padding:'24px 0',textAlign:'center',display:'flex',flexDirection:'column',gap:'14px',alignItems:'center'}}>
-            <div style={{fontSize:'2.5rem'}}>✅</div>
-            <p style={{fontWeight:'700'}}>Subscription Cancelled</p>
-            <p style={{color:'var(--muted)',fontSize:'.85rem'}}>Your access has been removed. You won&apos;t be charged again. Thanks for trying emotoplug!</p>
-            <button className="btn btn-primary" id="btn-cancel-done-close">Close</button>
+            <button className="btn btn-primary" id="btn-close-manage-sub-2">Close</button>
           </div>
         </div>
       </div>
