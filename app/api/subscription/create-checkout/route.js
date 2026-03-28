@@ -12,7 +12,7 @@ export async function POST(req) {
     const raw = await kvGet(`disc:${discount_code}`);
     const codeData = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : null;
 
-    if (!codeData || codeData.used) {
+    if (!codeData || (codeData.oneTime !== false && codeData.used)) {
       return NextResponse.json({ error: 'invalid_code', message: 'Code is invalid or already used.' }, { status: 400 });
     }
 
@@ -23,7 +23,7 @@ export async function POST(req) {
       const subEmail = email || `code-${discount_code}@emotoplug.local`;
       const token    = createSubscriptionToken(subEmail);
       const exp      = Date.now() + 366 * 24 * 60 * 60 * 1000;
-      await kvSet(`disc:${discount_code}`, { ...codeData, used: true });
+      if (codeData.oneTime !== false) await kvSet(`disc:${discount_code}`, { ...codeData, used: true });
       return NextResponse.json({ type: 'free_access', token, expires_at: exp });
     }
   }
@@ -64,11 +64,11 @@ export async function POST(req) {
       metadata:    { email: email || '', name: name || '', discount_code: discount_code || '' },
     });
 
-    // Mark code as used only after Stripe session created (not after payment — partial commitment)
+    // Mark one-time codes as used after Stripe session created
     if (discount_code && discountPct > 0) {
-      const raw = await kvGet(`disc:${discount_code}`);
-      const codeData = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : {};
-      await kvSet(`disc:${discount_code}`, { ...codeData, used: true });
+      const raw2 = await kvGet(`disc:${discount_code}`);
+      const cd2  = raw2 ? (typeof raw2 === 'string' ? JSON.parse(raw2) : raw2) : {};
+      if (cd2.oneTime !== false) await kvSet(`disc:${discount_code}`, { ...cd2, used: true });
     }
 
     return NextResponse.json({ checkout_url: session.url });

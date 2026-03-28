@@ -2,32 +2,45 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export default function AdminDashboard({ user }) {
-  const [stats,  setStats]  = useState(null);
+  const [stats,      setStats]      = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
-  const [discCodes, setDiscCodes] = useState({}); // pct → { code, copying }
-  const [discLoading, setDiscLoading] = useState({});
+  const [discPct,    setDiscPct]    = useState('');
+  const [oneTime,    setOneTime]    = useState(true);
+  const [discResult, setDiscResult] = useState(null); // { code, pct, oneTime }
+  const [discErr,    setDiscErr]    = useState('');
+  const [discLoading,setDiscLoading]= useState(false);
+  const [copied,     setCopied]     = useState(false);
 
-  async function generateCode(pct) {
-    setDiscLoading(p => ({ ...p, [pct]: true }));
+  async function generateCode() {
+    setDiscErr('');
+    setDiscResult(null);
+    const pctNum = Number(discPct);
+    if (!pctNum || pctNum < 1 || pctNum > 100) {
+      setDiscErr('Enter a percentage between 1 and 100.');
+      return;
+    }
+    setDiscLoading(true);
     try {
-      const res = await fetch('/api/admin/discount', {
+      const res  = await fetch('/api/admin/discount', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pct }),
+        body: JSON.stringify({ pct: pctNum, oneTime }),
       });
       const data = await res.json();
-      if (data.code) setDiscCodes(p => ({ ...p, [pct]: { code: data.code, copied: false } }));
-    } catch {}
-    setDiscLoading(p => ({ ...p, [pct]: false }));
+      if (data.code) setDiscResult(data);
+      else setDiscErr(data.error || 'Failed to generate code.');
+    } catch {
+      setDiscErr('Network error — try again.');
+    }
+    setDiscLoading(false);
   }
 
-  async function copyCode(pct) {
-    const code = discCodes[pct]?.code;
-    if (!code) return;
-    await navigator.clipboard.writeText(code).catch(() => {});
-    setDiscCodes(p => ({ ...p, [pct]: { ...p[pct], copied: true } }));
-    setTimeout(() => setDiscCodes(p => ({ ...p, [pct]: { ...p[pct], copied: false } })), 2000);
+  async function copyCode() {
+    if (!discResult?.code) return;
+    await navigator.clipboard.writeText(discResult.code).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   }
 
   const fetchStats = useCallback(async () => {
@@ -51,7 +64,7 @@ export default function AdminDashboard({ user }) {
     window.location.href = '/';
   }
 
-  const stripe  = stats?.stripeStats;
+  const stripe   = stats?.stripeStats;
   const stripeOk = stats?.stripeEnabled && stripe && !stripe.error;
 
   return (
@@ -126,32 +139,44 @@ export default function AdminDashboard({ user }) {
           {/* Discount Codes */}
           <section style={s.section}>
             <h2 style={s.sectionTitle}>🎟️ Discount Codes</h2>
-            <p style={{ color:'var(--muted)', fontSize:'0.85rem', marginBottom:16 }}>
-              Each code is one-time use. Generate a fresh one whenever you need it.
-            </p>
-            <div style={s.discGrid}>
-              {[100, 75, 50, 25, 10].map(pct => {
-                const entry = discCodes[pct];
-                const loading = discLoading[pct];
-                return (
-                  <div key={pct} style={s.discCard}>
-                    <div style={s.discPct}>{pct}% off</div>
-                    {entry ? (
-                      <div style={s.discRow}>
-                        <span style={s.discCode}>{entry.code}</span>
-                        <button onClick={() => copyCode(pct)} style={s.discCopyBtn}>
-                          {entry.copied ? '✓ Copied' : '📋'}
-                        </button>
-                        <button onClick={() => generateCode(pct)} style={s.discRegenBtn} title="Generate new code">↺</button>
-                      </div>
-                    ) : (
-                      <button onClick={() => generateCode(pct)} disabled={loading} style={s.discGenBtn}>
-                        {loading ? 'Generating…' : 'Generate'}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+            <div style={s.discCard}>
+              <div style={s.discRow}>
+                <input
+                  type="number"
+                  min="1" max="100"
+                  placeholder="% off (e.g. 50)"
+                  value={discPct}
+                  onChange={e => { setDiscPct(e.target.value); setDiscResult(null); setDiscErr(''); }}
+                  onKeyDown={e => e.key === 'Enter' && generateCode()}
+                  style={s.discInput}
+                />
+                <span style={{ color: 'var(--muted)', fontSize: '1rem' }}>%</span>
+                <label style={s.discToggleLabel}>
+                  <input
+                    type="checkbox"
+                    checked={oneTime}
+                    onChange={e => setOneTime(e.target.checked)}
+                    style={{ marginRight: 6 }}
+                  />
+                  One-time use
+                </label>
+                <button onClick={generateCode} disabled={discLoading} style={s.discGenBtn}>
+                  {discLoading ? 'Generating…' : 'Generate'}
+                </button>
+              </div>
+
+              {discErr && <p style={{ color: '#ef4444', fontSize: '0.85rem', margin: 0 }}>{discErr}</p>}
+
+              {discResult && (
+                <div style={s.discResultRow}>
+                  <span style={s.discCode}>{discResult.code}</span>
+                  <span style={s.discMeta}>{discResult.pct}% off · {discResult.oneTime ? 'one-time' : 'reusable'}</span>
+                  <button onClick={copyCode} style={s.discCopyBtn}>
+                    {copied ? '✓ Copied' : '📋 Copy'}
+                  </button>
+                  <button onClick={generateCode} style={s.discRegenBtn} title="Generate another">↺ New</button>
+                </div>
+              )}
             </div>
           </section>
 
@@ -191,41 +216,43 @@ function QuickLink({ href, icon, label }) {
 }
 
 const s = {
-  page:       { minHeight:'100vh', position:'relative', zIndex:1 },
-  header:     { borderBottom:'1px solid var(--border)', padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', height:60, background:'rgba(4,8,15,0.8)', backdropFilter:'blur(12px)', position:'sticky', top:0, zIndex:50 },
-  logo:       { fontSize:'1.6rem', letterSpacing:2 },
-  headerRight:{ display:'flex', alignItems:'center', gap:16 },
-  welcome:    { color:'var(--muted)', fontSize:'0.9rem' },
-  logoutBtn:  { background:'transparent', border:'1px solid var(--border)', color:'var(--muted)', borderRadius:8, padding:'6px 14px', cursor:'pointer', fontSize:'0.85rem' },
-  main:       { maxWidth:1100, margin:'0 auto', padding:'32px 24px 64px' },
-  titleRow:   { display:'flex', alignItems:'baseline', gap:16, marginBottom:32, flexWrap:'wrap' },
-  pageTitle:  { fontSize:'1.8rem', fontWeight:700, color:'var(--text)' },
-  updated:    { color:'var(--muted)', fontSize:'0.8rem' },
-  section:    { marginBottom:36 },
-  sectionTitle:{ fontSize:'1.1rem', fontWeight:600, color:'var(--text)', marginBottom:16 },
-  grid:       { display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))', gap:16 },
-  statCard:   { background:'var(--surface)', border:'1px solid', borderRadius:16, padding:'20px', display:'flex', flexDirection:'column', gap:6 },
-  statIcon:   { width:44, height:44, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.3rem', marginBottom:6 },
-  statLabel:  { color:'var(--muted)', fontSize:'0.82rem' },
-  statValue:  { fontSize:'1.7rem', fontWeight:700, lineHeight:1.1 },
-  statSub:    { color:'var(--muted)', fontSize:'0.78rem' },
-  infoCard:   { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:16, padding:20 },
-  payCard:    { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:16, padding:24, display:'flex', flexDirection:'column', gap:16 },
-  payRow:     { display:'flex', gap:40, flexWrap:'wrap' },
-  payLabel:   { color:'var(--muted)', fontSize:'0.8rem', marginBottom:4 },
-  payValue:   { color:'var(--text)', fontWeight:600 },
-  divider:    { height:1, background:'var(--border)' },
-  payNote:    { color:'var(--muted)', fontSize:'0.88rem', lineHeight:1.6 },
-  stripeBtn:  { display:'inline-block', background:'linear-gradient(135deg,#635bff,#4f46e5)', color:'#fff', padding:'10px 20px', borderRadius:10, fontSize:'0.9rem', fontWeight:600, textDecoration:'none' },
+  page:          { minHeight:'100vh', position:'relative', zIndex:1 },
+  header:        { borderBottom:'1px solid var(--border)', padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', height:60, background:'rgba(4,8,15,0.8)', backdropFilter:'blur(12px)', position:'sticky', top:0, zIndex:50 },
+  logo:          { fontSize:'1.6rem', letterSpacing:2 },
+  headerRight:   { display:'flex', alignItems:'center', gap:16 },
+  welcome:       { color:'var(--muted)', fontSize:'0.9rem' },
+  logoutBtn:     { background:'transparent', border:'1px solid var(--border)', color:'var(--muted)', borderRadius:8, padding:'6px 14px', cursor:'pointer', fontSize:'0.85rem' },
+  main:          { maxWidth:1100, margin:'0 auto', padding:'32px 24px 64px' },
+  titleRow:      { display:'flex', alignItems:'baseline', gap:16, marginBottom:32, flexWrap:'wrap' },
+  pageTitle:     { fontSize:'1.8rem', fontWeight:700, color:'var(--text)' },
+  updated:       { color:'var(--muted)', fontSize:'0.8rem' },
+  section:       { marginBottom:36 },
+  sectionTitle:  { fontSize:'1.1rem', fontWeight:600, color:'var(--text)', marginBottom:16 },
+  grid:          { display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))', gap:16 },
+  statCard:      { background:'var(--surface)', border:'1px solid', borderRadius:16, padding:'20px', display:'flex', flexDirection:'column', gap:6 },
+  statIcon:      { width:44, height:44, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.3rem', marginBottom:6 },
+  statLabel:     { color:'var(--muted)', fontSize:'0.82rem' },
+  statValue:     { fontSize:'1.7rem', fontWeight:700, lineHeight:1.1 },
+  statSub:       { color:'var(--muted)', fontSize:'0.78rem' },
+  infoCard:      { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:16, padding:20 },
+  payCard:       { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:16, padding:24, display:'flex', flexDirection:'column', gap:16 },
+  payRow:        { display:'flex', gap:40, flexWrap:'wrap' },
+  payLabel:      { color:'var(--muted)', fontSize:'0.8rem', marginBottom:4 },
+  payValue:      { color:'var(--text)', fontWeight:600 },
+  divider:       { height:1, background:'var(--border)' },
+  payNote:       { color:'var(--muted)', fontSize:'0.88rem', lineHeight:1.6 },
+  stripeBtn:     { display:'inline-block', background:'linear-gradient(135deg,#635bff,#4f46e5)', color:'#fff', padding:'10px 20px', borderRadius:10, fontSize:'0.9rem', fontWeight:600, textDecoration:'none' },
   stripeBtnOutline:{ display:'inline-block', border:'1px solid var(--border)', color:'var(--muted)', padding:'10px 20px', borderRadius:10, fontSize:'0.9rem', textDecoration:'none' },
-  linkGrid:   { display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:12 },
-  quickLink:  { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 18px', color:'var(--text)', textDecoration:'none', display:'flex', alignItems:'center', gap:10, fontSize:'0.9rem', fontWeight:500 },
-  discGrid:   { display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))', gap:14 },
-  discCard:   { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:14, padding:'18px 16px', display:'flex', flexDirection:'column', gap:12 },
-  discPct:    { fontSize:'1.1rem', fontWeight:700, color:'var(--text)' },
-  discGenBtn: { background:'linear-gradient(135deg,#00e5ff22,#00e5ff11)', border:'1px solid #00e5ff44', color:'#00e5ff', borderRadius:8, padding:'8px 14px', cursor:'pointer', fontSize:'0.88rem', fontWeight:600 },
-  discRow:    { display:'flex', alignItems:'center', gap:8 },
-  discCode:   { fontFamily:'monospace', fontSize:'1rem', fontWeight:700, color:'#00e5ff', letterSpacing:2, flex:1 },
-  discCopyBtn:{ background:'transparent', border:'1px solid var(--border)', color:'var(--muted)', borderRadius:7, padding:'5px 10px', cursor:'pointer', fontSize:'0.82rem' },
-  discRegenBtn:{ background:'transparent', border:'1px solid var(--border)', color:'var(--muted)', borderRadius:7, padding:'5px 10px', cursor:'pointer', fontSize:'1rem' },
+  linkGrid:      { display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:12 },
+  quickLink:     { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 18px', color:'var(--text)', textDecoration:'none', display:'flex', alignItems:'center', gap:10, fontSize:'0.9rem', fontWeight:500 },
+  discCard:      { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:16, padding:24, display:'flex', flexDirection:'column', gap:16 },
+  discRow:       { display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' },
+  discInput:     { background:'var(--surface2,#1e1e1e)', border:'1px solid var(--border)', borderRadius:10, padding:'10px 14px', color:'var(--text)', fontSize:'1rem', width:110, outline:'none' },
+  discToggleLabel:{ display:'flex', alignItems:'center', color:'var(--muted)', fontSize:'0.88rem', cursor:'pointer', userSelect:'none' },
+  discGenBtn:    { background:'linear-gradient(135deg,#00e5ff,#0099cc)', border:'none', color:'#000', borderRadius:10, padding:'10px 20px', cursor:'pointer', fontSize:'0.9rem', fontWeight:700 },
+  discResultRow: { display:'flex', alignItems:'center', gap:12, flexWrap:'wrap', background:'rgba(0,229,255,0.06)', border:'1px solid rgba(0,229,255,0.2)', borderRadius:12, padding:'14px 18px' },
+  discCode:      { fontFamily:'monospace', fontSize:'1.3rem', fontWeight:700, color:'#00e5ff', letterSpacing:3 },
+  discMeta:      { color:'var(--muted)', fontSize:'0.82rem' },
+  discCopyBtn:   { background:'transparent', border:'1px solid var(--border)', color:'var(--text)', borderRadius:8, padding:'7px 14px', cursor:'pointer', fontSize:'0.85rem' },
+  discRegenBtn:  { background:'transparent', border:'1px solid var(--border)', color:'var(--muted)', borderRadius:8, padding:'7px 14px', cursor:'pointer', fontSize:'0.85rem' },
 };

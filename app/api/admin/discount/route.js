@@ -3,22 +3,21 @@ import { getTokenFromRequest, verifyToken } from '../../../../lib/auth.js';
 import { kvSet } from '../../../../lib/kv.js';
 import crypto from 'crypto';
 
-const VALID_PCTS = [100, 75, 50, 25, 10];
-
 export async function POST(req) {
   const token = getTokenFromRequest(req);
   if (!verifyToken(token)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { pct } = await req.json().catch(() => ({}));
-  if (!VALID_PCTS.includes(Number(pct))) {
-    return NextResponse.json({ error: 'Invalid percentage' }, { status: 400 });
+  const { pct, oneTime } = await req.json().catch(() => ({}));
+  const pctNum = Number(pct);
+  if (!pctNum || pctNum < 1 || pctNum > 100) {
+    return NextResponse.json({ error: 'Percentage must be 1–100' }, { status: 400 });
   }
 
-  // Generate a random 8-char uppercase code
   const code = crypto.randomBytes(4).toString('hex').toUpperCase();
-  await kvSet(`disc:${code}`, { pct: Number(pct), used: false });
+  // oneTime: true → mark as used after first use; false → reusable (used never set)
+  await kvSet(`disc:${code}`, { pct: pctNum, used: false, oneTime: oneTime !== false });
 
-  return NextResponse.json({ code, pct });
+  return NextResponse.json({ code, pct: pctNum, oneTime: oneTime !== false });
 }
