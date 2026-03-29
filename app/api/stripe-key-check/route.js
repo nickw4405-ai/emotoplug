@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // Temporary debug endpoint — remove after confirming key (v2)
 export async function GET() {
   const key = (process.env.STRIPE_SECRET_KEY || '').trim();
