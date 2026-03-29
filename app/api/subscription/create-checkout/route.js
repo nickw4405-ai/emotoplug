@@ -33,9 +33,6 @@ export async function POST(req) {
   if (!secretKey) {
     return NextResponse.json({ error: 'stripe_not_configured' }, { status: 400 });
   }
-  // Temporary debug — remove after confirming key
-  const keyHint = secretKey.slice(-4);
-  console.log('Using Stripe key ending in:', keyHint);
 
   try {
     const baseAmount       = 1700; // $17.00 in cents
@@ -71,7 +68,7 @@ export async function POST(req) {
 
     const session = await stripeRes.json();
     if (!stripeRes.ok) {
-      return NextResponse.json({ error: session.error?.message || 'Stripe error', key_hint: keyHint }, { status: 500 });
+      return NextResponse.json({ error: session.error?.message || 'Stripe error' }, { status: 500 });
     }
 
     // Mark one-time codes as used after session created
