@@ -1,5 +1,12 @@
 'use strict';
 
+/* ── Track visit once per session ── */
+(function trackVisit() {
+  if (sessionStorage.getItem('_vt')) return; // already tracked this session
+  sessionStorage.setItem('_vt', '1');
+  fetch('/api/track-visit', { method: 'POST' }).catch(() => {});
+})();
+
 /* ── State ── */
 let currentImage = null, finderMods = [], stream = null;
 let pendingUnlockMod = null, currentBike = null;
