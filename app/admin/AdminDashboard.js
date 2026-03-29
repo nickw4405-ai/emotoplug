@@ -1,12 +1,13 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export default function AdminDashboard({ user }) {
   const [stats,      setStats]      = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [period,     setPeriod]     = useState('week');
   const [discPct,    setDiscPct]    = useState('');
   const [oneTime,    setOneTime]    = useState(true);
-  const [discResult, setDiscResult] = useState(null); // { code, pct, oneTime }
+  const [discResult, setDiscResult] = useState(null);
   const [discErr,    setDiscErr]    = useState('');
   const [discLoading,setDiscLoading]= useState(false);
   const [copied,     setCopied]     = useState(false);
@@ -87,30 +88,52 @@ export default function AdminDashboard({ user }) {
             {lastUpdate && <span style={s.updated}>Updated: {lastUpdate}</span>}
           </div>
 
-          {/* Live Stats */}
+          {/* Performance Chart */}
           <section style={s.section}>
-            <h2 style={s.sectionTitle}>📊 Live Stats</h2>
-            <div style={s.grid}>
-              <StatCard icon="👥" label="Active Visitors" value={stats ? String(stats.activeUsers) : '—'} sub="On site right now" color="#00e5ff" />
-              <a href="https://dashboard.stripe.com/payments" target="_blank" rel="noopener noreferrer" style={{ ...s.statCard, borderColor:'#22c55e44', textDecoration:'none' }}>
-                <div style={{ ...s.statIcon, background:'#22c55e22', color:'#22c55e' }}>💰</div>
-                <p style={s.statLabel}>Revenue & Payouts</p>
-                <p style={{ ...s.statValue, color:'#22c55e', fontSize:'1rem' }}>View on Stripe ↗</p>
-                <p style={s.statSub}>Live earnings, balance, payouts</p>
-              </a>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:10 }}>
+              <h2 style={{ ...s.sectionTitle, margin:0 }}>📊 Performance</h2>
+              <div style={s.tabs}>
+                {[['day','Today'],['week','Week'],['month','Month'],['allTime','All Time']].map(([key,label]) => (
+                  <button key={key} onClick={() => setPeriod(key)}
+                    style={period === key ? s.tabActive : s.tabInactive}>{label}</button>
+                ))}
+              </div>
             </div>
-          </section>
-
-          {/* Visitor Stats */}
-          <section style={s.section}>
-            <h2 style={s.sectionTitle}>👁️ Site Visitors</h2>
-            <div style={s.grid}>
-              <StatCard icon="♾️"  label="All Time"   value={stats?.visits ? stats.visits.allTime.toLocaleString()    : '—'} sub="Since launch"  color="#a78bfa" />
-              <StatCard icon="📅"  label="3 Years"    value={stats?.visits ? stats.visits.threeYear.toLocaleString()  : '—'} sub="Last 3 years"  color="#818cf8" />
-              <StatCard icon="🗓️" label="6 Months"   value={stats?.visits ? stats.visits.sixMonth.toLocaleString()   : '—'} sub="Last 6 months" color="#38bdf8" />
-              <StatCard icon="📆"  label="This Month" value={stats?.visits ? stats.visits.oneMonth.toLocaleString()   : '—'} sub="Last 30 days"  color="#00e5ff" />
-              <StatCard icon="📈"  label="7 Days"     value={stats?.visits ? stats.visits.sevenDay.toLocaleString()   : '—'} sub="Last 7 days"   color="#34d399" />
-              <StatCard icon="⚡"  label="Today"      value={stats?.visits ? stats.visits.oneDay.toLocaleString()     : '—'} sub="Visits today"  color="#fbbf24" />
+            <div style={s.chartCard}>
+              {/* Summary numbers */}
+              <div style={s.chartSummary}>
+                <div style={s.chartMetric}>
+                  <span style={{ ...s.chartMetricVal, color:'#00e5ff' }}>
+                    {stats?.totals?.[period]?.visitors?.toLocaleString() ?? '—'}
+                  </span>
+                  <span style={s.chartMetricLabel}>
+                    <span style={{ display:'inline-block', width:10, height:10, background:'#00e5ff', borderRadius:2, marginRight:5 }}/>
+                    Visitors
+                  </span>
+                </div>
+                <div style={s.chartMetric}>
+                  <span style={{ ...s.chartMetricVal, color:'#22c55e' }}>
+                    {stats?.totals?.[period]?.revenue != null
+                      ? `$${stats.totals[period].revenue.toFixed(2)}`
+                      : <a href="https://dashboard.stripe.com/payments" target="_blank" rel="noopener noreferrer" style={{ color:'#22c55e', fontSize:'0.85rem' }}>View Stripe ↗</a>}
+                  </span>
+                  <span style={s.chartMetricLabel}>
+                    <span style={{ display:'inline-block', width:10, height:10, background:'#22c55e', borderRadius:2, marginRight:5 }}/>
+                    Revenue
+                  </span>
+                </div>
+                <div style={s.chartMetric}>
+                  <span style={{ ...s.chartMetricVal, color:'#a78bfa', fontSize:'1.1rem' }}>
+                    {stats?.activeUsers ?? '—'}
+                  </span>
+                  <span style={s.chartMetricLabel}>🟢 Live now</span>
+                </div>
+              </div>
+              {/* Bar chart */}
+              {period === 'day'
+                ? <p style={{ color:'var(--muted)', fontSize:'0.85rem', textAlign:'center', padding:'24px 0' }}>Switch to Week or Month to see the chart</p>
+                : <BarChart data={stats?.chart?.[period]} />
+              }
             </div>
           </section>
 
@@ -198,6 +221,37 @@ export default function AdminDashboard({ user }) {
   );
 }
 
+function BarChart({ data }) {
+  if (!data?.labels?.length) return <p style={{ color:'var(--muted)', fontSize:'0.85rem', textAlign:'center', padding:'24px 0' }}>No data yet — visits will appear here</p>;
+  const { labels, visitors, revenue } = data;
+  const n = labels.length;
+  const maxVis = Math.max(...visitors, 1);
+  const maxRev = Math.max(...revenue, 0.01);
+  const barW = 10, gap = 4, groupW = barW * 2 + gap + 6;
+  const chartH = 120, totalW = n * groupW + 20;
+
+  return (
+    <div style={{ overflowX:'auto', marginTop:16 }}>
+      <svg viewBox={`0 0 ${totalW} ${chartH + 24}`} style={{ width:'100%', minWidth: Math.min(totalW, 300), display:'block' }}>
+        {labels.map((lbl, i) => {
+          const x = 10 + i * groupW;
+          const visH = Math.max((visitors[i] / maxVis) * chartH, visitors[i] > 0 ? 2 : 0);
+          const revH = Math.max((revenue[i] / maxRev) * chartH, revenue[i] > 0 ? 2 : 0);
+          const showLbl = n <= 12 || i % Math.ceil(n / 10) === 0;
+          return (
+            <g key={i}>
+              <rect x={x}          y={chartH - visH} width={barW} height={visH} fill="#00e5ff" fillOpacity={0.85} rx={2} />
+              <rect x={x + barW + gap} y={chartH - revH} width={barW} height={revH} fill="#22c55e" fillOpacity={0.85} rx={2} />
+              {showLbl && <text x={x + barW} y={chartH + 14} textAnchor="middle" fontSize={7} fill="#666">{lbl}</text>}
+            </g>
+          );
+        })}
+        <line x1={10} y1={chartH} x2={totalW - 10} y2={chartH} stroke="#333" strokeWidth={1} />
+      </svg>
+    </div>
+  );
+}
+
 function StatCard({ icon, label, value, sub, color }) {
   return (
     <div style={{ ...s.statCard, borderColor: color + '44' }}>
@@ -249,6 +303,14 @@ const s = {
   quickLink:     { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'14px 18px', color:'var(--text)', textDecoration:'none', display:'flex', alignItems:'center', gap:10, fontSize:'0.9rem', fontWeight:500 },
   discCard:      { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:16, padding:24, display:'flex', flexDirection:'column', gap:16 },
   discRow:       { display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' },
+  tabs:          { display:'flex', gap:4, background:'var(--surface)', borderRadius:10, padding:4, border:'1px solid var(--border)' },
+  tabActive:     { background:'var(--accent,#00e5ff)', color:'#000', border:'none', borderRadius:7, padding:'5px 14px', cursor:'pointer', fontSize:'0.82rem', fontWeight:700 },
+  tabInactive:   { background:'transparent', color:'var(--muted)', border:'none', borderRadius:7, padding:'5px 14px', cursor:'pointer', fontSize:'0.82rem' },
+  chartCard:     { background:'var(--surface)', border:'1px solid var(--border)', borderRadius:16, padding:'20px 24px' },
+  chartSummary:  { display:'flex', gap:32, flexWrap:'wrap', marginBottom:8 },
+  chartMetric:   { display:'flex', flexDirection:'column', gap:4 },
+  chartMetricVal:{ fontSize:'1.8rem', fontWeight:700, lineHeight:1 },
+  chartMetricLabel:{ color:'var(--muted)', fontSize:'0.78rem', display:'flex', alignItems:'center' },
   discInput:     { background:'var(--surface2,#1e1e1e)', border:'1px solid var(--border)', borderRadius:10, padding:'10px 14px', color:'var(--text)', fontSize:'1rem', width:110, outline:'none' },
   discToggleLabel:{ display:'flex', alignItems:'center', color:'var(--muted)', fontSize:'0.88rem', cursor:'pointer', userSelect:'none' },
   discGenBtn:    { background:'linear-gradient(135deg,#00e5ff,#0099cc)', border:'none', color:'#000', borderRadius:10, padding:'10px 20px', cursor:'pointer', fontSize:'0.9rem', fontWeight:700 },
