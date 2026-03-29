@@ -59,16 +59,22 @@ export async function GET(req) {
     if (now - ts > VISITOR_TTL) _visitors.delete(id);
   }
 
-  // ── Fetch visitor KV data in parallel ────────────────────────────────────
+  // ── Fetch all KV data in parallel ────────────────────────────────────────
   const N_DAYS   = 30;
   const N_MONTHS = 12;
-  const [totalVisRaw, ...kvRest] = await Promise.all([
+  const [totalVisRaw, totalClicksRaw, totalConvRaw, ...kvRest] = await Promise.all([
     kvGet('visits:total'),
+    kvGet('clicks:total'),
+    kvGet('conversions:total'),
     ...Array.from({ length: N_DAYS   }, (_, i) => kvGet(`visits:${isoDay(i)}`)),
     ...Array.from({ length: N_MONTHS }, (_, i) => kvGet(`visits:${isoMonth(i)}`)),
+    ...Array.from({ length: N_DAYS   }, (_, i) => kvGet(`clicks:${isoDay(i)}`)),
+    ...Array.from({ length: N_DAYS   }, (_, i) => kvGet(`conversions:${isoDay(i)}`)),
   ]);
-  const dayVis   = kvRest.slice(0, N_DAYS).map(v => Number(v) || 0);    // [0]=today
-  const monthVis = kvRest.slice(N_DAYS).map(v => Number(v) || 0);        // [0]=this month
+  const dayVis   = kvRest.slice(0,          N_DAYS).map(v => Number(v) || 0);
+  const monthVis = kvRest.slice(N_DAYS,     N_DAYS + N_MONTHS).map(v => Number(v) || 0);
+  const dayClick = kvRest.slice(N_DAYS + N_MONTHS, N_DAYS + N_MONTHS + N_DAYS).map(v => Number(v) || 0);
+  const dayConv  = kvRest.slice(N_DAYS + N_MONTHS + N_DAYS).map(v => Number(v) || 0);
 
   // ── Fetch Stripe charges (last 30 days) ───────────────────────────────────
   const charges = await fetchCharges(toUnix(N_DAYS));
@@ -85,28 +91,56 @@ export async function GET(req) {
   // ── Build chart slices (reversed so oldest → newest) ─────────────────────
   const slice = (arr, n) => arr.slice(0, n).reverse();
   const week = {
-    labels:   Array.from({ length: 7  }, (_, i) => shortDay(6  - i)),
-    visitors: slice(dayVis, 7),
-    revenue:  slice(dayRev, 7),
+    labels:      Array.from({ length: 7  }, (_, i) => shortDay(6  - i)),
+    visitors:    slice(dayVis,   7),
+    revenue:     slice(dayRev,   7),
+    clicks:      slice(dayClick, 7),
+    conversions: slice(dayConv,  7),
   };
   const month = {
-    labels:   Array.from({ length: 30 }, (_, i) => shortDay(29 - i)),
-    visitors: slice(dayVis, 30),
-    revenue:  slice(dayRev, 30),
+    labels:      Array.from({ length: 30 }, (_, i) => shortDay(29 - i)),
+    visitors:    slice(dayVis,   30),
+    revenue:     slice(dayRev,   30),
+    clicks:      slice(dayClick, 30),
+    conversions: slice(dayConv,  30),
   };
   const allTime = {
-    labels:   Array.from({ length: N_MONTHS }, (_, i) => shortMonth(N_MONTHS - 1 - i)),
-    visitors: slice(monthVis, N_MONTHS),
-    revenue:  [],
+    labels:      Array.from({ length: N_MONTHS }, (_, i) => shortMonth(N_MONTHS - 1 - i)),
+    visitors:    slice(monthVis, N_MONTHS),
+    revenue:     [],
+    clicks:      [],
+    conversions: [],
   };
 
   // ── Totals ────────────────────────────────────────────────────────────────
-  const sum = arr => arr.reduce((a, b) => a + b, 0);
+  const sum  = arr => arr.reduce((a, b) => a + b, 0);
+  const rate = (conv, vis) => vis > 0 ? +((conv / vis) * 100).toFixed(1) : 0;
+
+  const totalVis  = Number(totalVisRaw)    || 0;
+  const totalClk  = Number(totalClicksRaw) || 0;
+  const totalConv = Number(totalConvRaw)   || 0;
+
   const totals = {
-    day:     { visitors: dayVis[0],      revenue: dayRev[0] },
-    week:    { visitors: sum(dayVis.slice(0, 7)),  revenue: sum(dayRev.slice(0, 7)) },
-    month:   { visitors: sum(dayVis.slice(0, 30)), revenue: sum(dayRev.slice(0, 30)) },
-    allTime: { visitors: Number(totalVisRaw) || 0, revenue: null },
+    day: {
+      visitors: dayVis[0],   revenue: dayRev[0],
+      clicks:   dayClick[0], conversions: dayConv[0],
+      convRate: rate(dayConv[0], dayVis[0]),
+    },
+    week: {
+      visitors: sum(dayVis.slice(0,7)),   revenue: sum(dayRev.slice(0,7)),
+      clicks:   sum(dayClick.slice(0,7)), conversions: sum(dayConv.slice(0,7)),
+      convRate: rate(sum(dayConv.slice(0,7)), sum(dayVis.slice(0,7))),
+    },
+    month: {
+      visitors: sum(dayVis.slice(0,30)),   revenue: sum(dayRev.slice(0,30)),
+      clicks:   sum(dayClick.slice(0,30)), conversions: sum(dayConv.slice(0,30)),
+      convRate: rate(sum(dayConv.slice(0,30)), sum(dayVis.slice(0,30))),
+    },
+    allTime: {
+      visitors: totalVis, revenue: null,
+      clicks:   totalClk, conversions: totalConv,
+      convRate: rate(totalConv, totalVis),
+    },
   };
 
   return NextResponse.json({

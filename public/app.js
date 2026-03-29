@@ -41,6 +41,8 @@ function showPaywall() {
   // Always open on Pay tab
   switchPaywallTab('pay');
   show('sub-paywall-modal');
+  // Track click (paywall opened = purchase intent)
+  fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({type:'click'}) }).catch(()=>{});
 }
 
 /* ── PAYWALL TAB SWITCHING ── */
@@ -758,6 +760,8 @@ async function verifySubscription(sessionId, email) {
       if (data.token) {
         saveSubToken(data.token, data.expires_at);
         show('sub-success-modal');
+        // Track conversion (payment succeeded)
+        fetch('/api/track-event', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({type:'conversion'}) }).catch(()=>{});
         return;
       }
       if (data.status !== 'pending') break; // real error, stop retrying

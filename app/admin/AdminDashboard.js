@@ -107,19 +107,41 @@ export default function AdminDashboard({ user }) {
                     {stats?.totals?.[period]?.visitors?.toLocaleString() ?? '—'}
                   </span>
                   <span style={s.chartMetricLabel}>
-                    <span style={{ display:'inline-block', width:10, height:10, background:'#00e5ff', borderRadius:2, marginRight:5 }}/>
-                    Visitors
+                    <span style={s.dot('#00e5ff')}/>Visitors
+                  </span>
+                </div>
+                <div style={s.chartMetric}>
+                  <span style={{ ...s.chartMetricVal, color:'#f59e0b' }}>
+                    {stats?.totals?.[period]?.clicks?.toLocaleString() ?? '—'}
+                  </span>
+                  <span style={s.chartMetricLabel}>
+                    <span style={s.dot('#f59e0b')}/>Clicks
                   </span>
                 </div>
                 <div style={s.chartMetric}>
                   <span style={{ ...s.chartMetricVal, color:'#22c55e' }}>
-                    {stats?.totals?.[period]?.revenue != null
-                      ? `$${stats.totals[period].revenue.toFixed(2)}`
-                      : <a href="https://dashboard.stripe.com/payments" target="_blank" rel="noopener noreferrer" style={{ color:'#22c55e', fontSize:'0.85rem' }}>View Stripe ↗</a>}
+                    {stats?.totals?.[period]?.conversions?.toLocaleString() ?? '—'}
                   </span>
                   <span style={s.chartMetricLabel}>
-                    <span style={{ display:'inline-block', width:10, height:10, background:'#22c55e', borderRadius:2, marginRight:5 }}/>
-                    Revenue
+                    <span style={s.dot('#22c55e')}/>Conversions
+                  </span>
+                </div>
+                <div style={s.chartMetric}>
+                  <span style={{ ...s.chartMetricVal, color:'#a78bfa' }}>
+                    {stats?.totals?.[period]?.convRate != null ? `${stats.totals[period].convRate}%` : '—'}
+                  </span>
+                  <span style={s.chartMetricLabel}>
+                    <span style={s.dot('#a78bfa')}/>Conv. Rate
+                  </span>
+                </div>
+                <div style={s.chartMetric}>
+                  <span style={{ ...s.chartMetricVal, color:'#34d399' }}>
+                    {stats?.totals?.[period]?.revenue != null
+                      ? `$${stats.totals[period].revenue.toFixed(2)}`
+                      : <a href="https://dashboard.stripe.com/payments" target="_blank" rel="noopener noreferrer" style={{ color:'#34d399', fontSize:'0.85rem' }}>View Stripe ↗</a>}
+                  </span>
+                  <span style={s.chartMetricLabel}>
+                    <span style={s.dot('#34d399')}/>Revenue
                   </span>
                 </div>
                 <div style={s.chartMetric}>
@@ -314,6 +336,7 @@ const s = {
   chartMetric:   { display:'flex', flexDirection:'column', gap:4 },
   chartMetricVal:{ fontSize:'1.8rem', fontWeight:700, lineHeight:1 },
   chartMetricLabel:{ color:'var(--muted)', fontSize:'0.78rem', display:'flex', alignItems:'center' },
+  dot: c => ({ display:'inline-block', width:8, height:8, background:c, borderRadius:2, marginRight:5, flexShrink:0 }),
   discInput:     { background:'var(--surface2,#1e1e1e)', border:'1px solid var(--border)', borderRadius:10, padding:'10px 14px', color:'var(--text)', fontSize:'1rem', width:110, outline:'none' },
   discToggleLabel:{ display:'flex', alignItems:'center', color:'var(--muted)', fontSize:'0.88rem', cursor:'pointer', userSelect:'none' },
   discGenBtn:    { background:'linear-gradient(135deg,#00e5ff,#0099cc)', border:'none', color:'#000', borderRadius:10, padding:'10px 20px', cursor:'pointer', fontSize:'0.9rem', fontWeight:700 },
