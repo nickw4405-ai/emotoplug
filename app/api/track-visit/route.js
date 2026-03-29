@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { kvIncr } from '../../../../lib/kv.js';
+import { kvIncr } from '../../../lib/kv.js';
 
 export const dynamic = 'force-dynamic';
 
