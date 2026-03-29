@@ -523,6 +523,10 @@ export default function Page() {
 
       <footer>
         <p>⚡ emotoplug · Powered by Claude AI · Prices may vary · Not affiliated with any retailer · <a href="#" id="footer-terms">Terms of Service</a></p>
+        <p style={{marginTop:'8px',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',flexWrap:'wrap'}}>
+          <a href="mailto:nickw9745@gmail.com" style={{display:'inline-flex',alignItems:'center',gap:'6px',background:'var(--accent)',color:'#fff',border:'none',borderRadius:'8px',padding:'6px 14px',fontSize:'.85rem',fontWeight:'600',textDecoration:'none',cursor:'pointer'}}>📧 Contact</a>
+          <span style={{color:'var(--muted)',fontSize:'.85rem'}}>nickw9745@gmail.com</span>
+        </p>
       </footer>
     </>
   );
