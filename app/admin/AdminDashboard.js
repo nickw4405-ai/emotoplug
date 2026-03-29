@@ -105,12 +105,12 @@ export default function AdminDashboard({ user }) {
           <section style={s.section}>
             <h2 style={s.sectionTitle}>👁️ Site Visitors</h2>
             <div style={s.grid}>
-              <StatCard icon="♾️"  label="All Time"   value={stats ? stats.visits.allTime.toLocaleString()   : '—'} sub="Since launch"          color="#a78bfa" />
-              <StatCard icon="📅"  label="3 Years"    value={stats ? stats.visits.threeYear.toLocaleString() : '—'} sub="Last 3 years"           color="#818cf8" />
-              <StatCard icon="🗓️" label="6 Months"   value={stats ? stats.visits.sixMonth.toLocaleString()  : '—'} sub="Last 6 months"          color="#38bdf8" />
-              <StatCard icon="📆"  label="This Month"  value={stats ? stats.visits.oneMonth.toLocaleString()  : '—'} sub="Last 30 days"           color="#00e5ff" />
-              <StatCard icon="📈"  label="7 Days"      value={stats ? stats.visits.sevenDay.toLocaleString()  : '—'} sub="Last 7 days"            color="#34d399" />
-              <StatCard icon="⚡"  label="Today"       value={stats ? stats.visits.oneDay.toLocaleString()    : '—'} sub="Visits today"           color="#fbbf24" />
+              <StatCard icon="♾️"  label="All Time"   value={stats?.visits ? stats.visits.allTime.toLocaleString()    : '—'} sub="Since launch"  color="#a78bfa" />
+              <StatCard icon="📅"  label="3 Years"    value={stats?.visits ? stats.visits.threeYear.toLocaleString()  : '—'} sub="Last 3 years"  color="#818cf8" />
+              <StatCard icon="🗓️" label="6 Months"   value={stats?.visits ? stats.visits.sixMonth.toLocaleString()   : '—'} sub="Last 6 months" color="#38bdf8" />
+              <StatCard icon="📆"  label="This Month" value={stats?.visits ? stats.visits.oneMonth.toLocaleString()   : '—'} sub="Last 30 days"  color="#00e5ff" />
+              <StatCard icon="📈"  label="7 Days"     value={stats?.visits ? stats.visits.sevenDay.toLocaleString()   : '—'} sub="Last 7 days"   color="#34d399" />
+              <StatCard icon="⚡"  label="Today"      value={stats?.visits ? stats.visits.oneDay.toLocaleString()     : '—'} sub="Visits today"  color="#fbbf24" />
             </div>
           </section>
 
