@@ -227,26 +227,29 @@ function BarChart({ data }) {
   const n = labels.length;
   const maxVis = Math.max(...visitors, 1);
   const maxRev = Math.max(...revenue, 0.01);
-  const barW = 10, gap = 4, groupW = barW * 2 + gap + 6;
-  const chartH = 120, totalW = n * groupW + 20;
+  // Fixed viewBox width — bars scale to fit
+  const W = 600, chartH = 110, padX = 8;
+  const groupW = (W - padX * 2) / n;
+  const barW   = Math.max(groupW * 0.38, 1);
+  const gap    = Math.max(groupW * 0.06, 0.5);
 
   return (
-    <div style={{ overflowX:'auto', marginTop:16 }}>
-      <svg viewBox={`0 0 ${totalW} ${chartH + 24}`} style={{ width:'100%', minWidth: Math.min(totalW, 300), display:'block' }}>
+    <div style={{ marginTop:16 }}>
+      <svg viewBox={`0 0 ${W} ${chartH + 20}`} style={{ width:'100%', display:'block' }}>
         {labels.map((lbl, i) => {
-          const x = 10 + i * groupW;
+          const x = padX + i * groupW;
           const visH = Math.max((visitors[i] / maxVis) * chartH, visitors[i] > 0 ? 2 : 0);
           const revH = Math.max((revenue[i] / maxRev) * chartH, revenue[i] > 0 ? 2 : 0);
-          const showLbl = n <= 12 || i % Math.ceil(n / 10) === 0;
+          const showLbl = n <= 12 || i % Math.ceil(n / 8) === 0;
           return (
             <g key={i}>
-              <rect x={x}          y={chartH - visH} width={barW} height={visH} fill="#00e5ff" fillOpacity={0.85} rx={2} />
-              <rect x={x + barW + gap} y={chartH - revH} width={barW} height={revH} fill="#22c55e" fillOpacity={0.85} rx={2} />
-              {showLbl && <text x={x + barW} y={chartH + 14} textAnchor="middle" fontSize={7} fill="#666">{lbl}</text>}
+              <rect x={x}               y={chartH - visH} width={barW} height={visH} fill="#00e5ff" fillOpacity={0.85} rx={1} />
+              <rect x={x + barW + gap}  y={chartH - revH} width={barW} height={revH} fill="#22c55e" fillOpacity={0.85} rx={1} />
+              {showLbl && <text x={x + barW} y={chartH + 14} textAnchor="middle" fontSize={8} fill="#555">{lbl}</text>}
             </g>
           );
         })}
-        <line x1={10} y1={chartH} x2={totalW - 10} y2={chartH} stroke="#333" strokeWidth={1} />
+        <line x1={padX} y1={chartH} x2={W - padX} y2={chartH} stroke="#333" strokeWidth={1} />
       </svg>
     </div>
   );
