@@ -605,11 +605,12 @@ function openModModal(mod) {
     </div>
     <div class="detail-section">
       <div class="detail-label">Pricing</div>
-      <div class="modal-savings-row">
+      <div class="modal-savings-row" id="mod-price-row">
         ${mod.retail_price ? `<span style="color:var(--muted);text-decoration:line-through">$${mod.retail_price}</span>` : ''}
-        ${mod.found_price ? `<span style="font-size:1.3rem;font-weight:800;color:var(--accent)">$${mod.found_price}</span>` : ''}
-        ${savings > 0 ? `<span class="modal-savings-badge">You save $${savings}!</span>` : ''}
+        <span id="mod-live-price" style="font-size:1.3rem;font-weight:800;color:var(--accent)">${mod.found_price ? `$${mod.found_price}` : '…'}</span>
+        <span id="mod-live-badge">${savings > 0 ? `<span class="modal-savings-badge">You save $${savings}!</span>` : ''}</span>
       </div>
+      <p id="mod-price-note" style="font-size:.72rem;color:var(--muted);margin-top:4px"></p>
     </div>
     ${mod.compatibility_note||mod.compatibility ? `<div class="detail-section">
       <div class="detail-label">Compatibility</div>
@@ -624,6 +625,25 @@ function openModModal(mod) {
       <div class="shop-links">${buildShopLinks(mod, aq, eq)}</div>
     </div>`;
   show('mod-modal');
+
+  // Fetch live eBay price in background and update display
+  const liveQ = encodeURIComponent(mod.ebay_search || mod.title || '');
+  fetch(`/api/mods/live-price?id=${encodeURIComponent(mod.id||'')}&q=${liveQ}`)
+    .then(r => r.json())
+    .then(({ price, url }) => {
+      if (!price) return;
+      const el = $('mod-live-price');
+      const note = $('mod-price-note');
+      const badge = $('mod-live-badge');
+      if (!el) return;
+      el.textContent = `$${price.toFixed(2)}`;
+      note.textContent = 'Live eBay price · updated now';
+      if (mod.retail_price && price < mod.retail_price) {
+        const saved = (mod.retail_price - price).toFixed(0);
+        badge.innerHTML = `<span class="modal-savings-badge">You save $${saved}!</span>`;
+      }
+    })
+    .catch(() => {});
 }
 
 $('btn-close-mod').addEventListener('click', () => hide('mod-modal'));
