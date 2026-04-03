@@ -569,20 +569,36 @@ function attachCardClicks(grid, mods) {
 /* ── MOD MODAL ───────────────────────────────────────────── */
 
 function buildShopLinks(mod, aq) {
-  const amzSearch = `https://www.amazon.com/s?k=${aq}`;
-  const ebaySearch = `https://www.ebay.com/sch/i.html?_nkw=${aq}`;
-  const isAmazon = mod.amazon_direct && mod.amazon_direct.includes('amazon.com');
-  const isEbay = mod.amazon_direct && mod.amazon_direct.includes('ebay.com');
-  const isDirect = mod.amazon_direct && (isAmazon || isEbay || (!mod.amazon_direct.includes('/s?') && !mod.amazon_direct.includes('/sch/')));
-  const firstLabel = isAmazon ? '✅ Amazon Direct' : isEbay ? '✅ eBay Direct' : isDirect ? '✅ Buy Direct' : '🛒 Amazon';
-  const firstUrl = isDirect ? mod.amazon_direct : amzSearch;
-  const ytQ = encodeURIComponent((mod.youtube_search || mod.title || '') + ' install tutorial');
+  const amzSearch  = `https://www.amazon.com/s?k=${aq}`;
+  const ebaySearch = `https://www.ebay.com/sch/i.html?_nkw=${aq}&_sop=15&LH_BIN=1`;
+  const isAmazon = mod.amazon_direct?.includes('amazon.com');
+  const isEbay   = mod.amazon_direct?.includes('ebay.com');
+  const isDirect = mod.amazon_direct && (isAmazon || isEbay || !mod.amazon_direct.includes('/s?'));
+
+  const mainLabel = isAmazon ? '✅ Amazon' : isEbay ? '✅ eBay' : isDirect ? '✅ Buy Direct' : '🛒 Amazon';
+  const mainPrice = mod.found_price ? ` — $${mod.found_price}` : '';
+  const mainUrl   = isDirect ? mod.amazon_direct : amzSearch;
+
+  const ytQ   = encodeURIComponent((mod.youtube_search || mod.title || '') + ' install tutorial');
   const ytUrl = mod.tutorial_url || `https://www.youtube.com/results?search_query=${ytQ}`;
-  return `
-    <a class="shop-btn amazon" href="${firstUrl}" target="_blank" rel="noopener">${firstLabel}</a>
-    <a class="shop-btn ebay" href="${ebaySearch}" target="_blank" rel="noopener">🏷️ eBay</a>
-    <a class="shop-btn youtube" href="${ytUrl}" target="_blank" rel="noopener">📺 Install Guide</a>
-  `;
+
+  let links = `<a class="shop-btn amazon" href="${mainUrl}" target="_blank" rel="noopener">${mainLabel}${mainPrice}</a>`;
+
+  // AliExpress — cheapest option when available
+  if (mod.alibaba_url) {
+    const aliPrice = mod.alibaba_price ? ` — $${mod.alibaba_price}` : '';
+    links += `<a class="shop-btn" style="border-color:rgba(255,106,0,.35);color:#ff6a00" href="${esc(mod.alibaba_url)}" target="_blank" rel="noopener">🌏 AliExpress${aliPrice}</a>`;
+  }
+
+  // US retailer
+  if (mod.usa_url) {
+    const usPrice = mod.usa_price ? ` — $${mod.usa_price}` : '';
+    links += `<a class="shop-btn" style="border-color:rgba(59,130,246,.35);color:#60a5fa" href="${esc(mod.usa_url)}" target="_blank" rel="noopener">🇺🇸 US Store${usPrice}</a>`;
+  }
+
+  links += `<a class="shop-btn" style="border-color:rgba(255,255,255,.12);color:var(--muted)" href="${ebaySearch}" target="_blank" rel="noopener">🏷️ eBay</a>`;
+  links += `<a class="shop-btn youtube" href="${ytUrl}" target="_blank" rel="noopener">📺 Install Guide</a>`;
+  return links;
 }
 
 function openModModal(mod) {
