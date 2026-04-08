@@ -165,7 +165,7 @@ $('btn-combine-credits')?.addEventListener('click', async () => {
           <div class="discount-code-label">Your ${d.pct}% discount code:</div>
           <div class="discount-code-value" id="discount-code-display">${d.code}</div>
           <button class="btn btn-sm btn-outline discount-code-copy" id="btn-copy-code">📋 Copy</button>
-          <div class="discount-code-hint">Switch to the 💳 Pay tab, paste this code, then subscribe at ${d.pct}% off!</div>
+          <div class="discount-code-hint">Switch to the 💳 Pay tab, paste this code, then unlock at ${d.pct}% off!</div>
         </div>`;
       sucEl.classList.remove('hidden');
       $('btn-copy-code')?.addEventListener('click', () => {
@@ -777,7 +777,7 @@ $('btn-subscribe').addEventListener('click', async () => {
     }
   }
 
-  // No discount code — go straight to Stripe payment link
+  // No discount code — go straight to Stripe payment link ($15 one-time)
   const payUrl = new URL('https://buy.stripe.com/aFaaEZ9gH8gB2L5cj5cbC01');
   if (email) payUrl.searchParams.set('prefilled_email', email);
   location.href = payUrl.toString();
